@@ -1,9 +1,14 @@
+#+TITLE: .emacs — Configuration & explanation of my .emacs
+#+AUTHOR: Jacques Cretinon
+#+DATE: <2025-12-21>
+#+PROPERTY: header-args:emacs-lisp :results output :exports both
+
 This Org file is a *literate* version of my =.emacs=. It lets you
 read the commentary and evaluate code *step by step* from Emacs.
 
 * Table of Contents
 :PROPERTIES:
-:TOC:      :include all :ignore (this)
+:TOC:      :include all :ignore (this) :depth 3
 :END:
 :CONTENTS:
 - [[#full-library-source-tangled-to-emacs][Full Library Source (tangled to .emacs)]]
@@ -44,9 +49,6 @@ read the commentary and evaluate code *step by step* from Emacs.
   - [[#magit][Magit]]
   - [[#llms][LLMs]]
     - [[#chatgpt][ChatGPT]]
-      - [[#explain-how-to-configure-authinfo][explain how to configure .authinfo]]
-      - [[#we-may-want-to-keep-same-buffer][we may want to keep same buffer]]
-      - [[#we-may-want-to-split-window-statically][we may want to split window statically]]
 - [[#license][License]]
 :END:
 
