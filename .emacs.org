@@ -9,18 +9,47 @@ read the commentary and evaluate code *step by step* from Emacs.
 
 * Table of Contents
 :PROPERTIES:
-:TOC:      :include all :depth 3 :force (depth) :ignore (this) :local (depth)
+:TOC:      :include all :depth 4 :force (depth) :ignore (this) :local (depth)
 :END:
 :CONTENTS:
 - [[#full-library-source-tangled-to-emacs][Full Library Source (tangled to .emacs)]]
 - [[#step-by-step-explanations][Step-by-step explanations]]
   - [[#use-package][Use package]]
+    - [[#pre-requisite][Pre requisite]]
+    - [[#debug-use-package][Debug use package]]
+    - [[#refresh-packages][Refresh packages]]
   - [[#custom-configuration][Custom configuration]]
+    - [[#well-need-to-save-some-custom-conf][We'll need to save some custom conf]]
   - [[#emacs-ui][Emacs UI]]
+    - [[#theme-configuration][Theme Configuration]]
+    - [[#ui-tweaks][UI Tweaks]]
+    - [[#special-char-and-indentation][Special char and indentation]]
+    - [[#icons-and-navigation][Icons and Navigation]]
+    - [[#tab-bar-configuration][Tab Bar Configuration]]
+    - [[#indentation--block-of-code][Indentation & block of code]]
+    - [[#line-numbers][Line numbers]]
+    - [[#remap-keys-putty-support][Remap keys (Putty support)]]
+    - [[#xterm-support][Xterm support]]
+    - [[#utf8-or-die][UTF8 or die]]
   - [[#file-management][File management]]
+    - [[#auto-backup][Auto backup]]
+    - [[#special-features][Special features]]
+    - [[#json-mode][Json mode]]
+    - [[#yaml-mode][Yaml mode]]
+    - [[#csv-mode][Csv mode]]
+    - [[#markdown-mode][Markdown mode]]
+    - [[#org-mode][Org mode]]
+    - [[#pdf-mode][PDF mode]]
   - [[#code-completion][Code completion]]
+    - [[#general-emacs][General Emacs]]
+    - [[#snippet][Snippet]]
+    - [[#vertico][Vertico]]
+    - [[#corfu][Corfu]]
+    - [[#dabbrev][Dabbrev]]
+    - [[#cape][Cape]]
   - [[#magit-][Magit !]]
   - [[#llms][LLMs]]
+    - [[#chatgpt][ChatGPT]]
 - [[#license][License]]
 :END:
 
@@ -59,6 +88,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 :CUSTOM_ID: use-package
 :END:
 *** Pre requisite
+:PROPERTIES:
+:CUSTOM_ID: pre-requisite
+:END:
 #+BEGIN_SRC emacs-lisp
   ;;Overall, this code configures the package management system and ensures `use-package` is available for further configurations.
   (require 'package)
@@ -81,12 +113,18 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 *** Debug use package
+:PROPERTIES:
+:CUSTOM_ID: debug-use-package
+:END:
 #+BEGIN_SRC emacs-lisp
   ;; if we need to call debbuger on specific call
   (debug-on-entry 'package-initialize)
 #+END_SRC
 
 *** Refresh packages
+:PROPERTIES:
+:CUSTOM_ID: refresh-packages
+:END:
 #+BEGIN_SRC emacs-lisp
     ;; if we need to refresh melpa pkg list
   (package-refresh-contents)
@@ -97,6 +135,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 :CUSTOM_ID: custom-configuration
 :END:
 *** We'll need to save some custom conf
+:PROPERTIES:
+:CUSTOM_ID: well-need-to-save-some-custom-conf
+:END:
 #+BEGIN_SRC emacs-lisp
   ;; Load and activate the Cyberpunk theme
   (setq custom-file "~/.emacs.custom")
@@ -108,6 +149,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 :CUSTOM_ID: emacs-ui
 :END:
 *** Theme Configuration
+:PROPERTIES:
+:CUSTOM_ID: theme-configuration
+:END:
 #+BEGIN_SRC emacs-lisp
   ;; Load and activate the Cyberpunk theme
   (use-package cyberpunk-theme
@@ -117,6 +161,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 *** UI Tweaks
+:PROPERTIES:
+:CUSTOM_ID: ui-tweaks
+:END:
 #+BEGIN_SRC emacs-lisp
   ;; Disable unnecessary UI elements
   (tool-bar-mode -1)   ;; Disable the tool bar
@@ -129,6 +176,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
   #+END_SRC
 
 *** Special char and indentation
+:PROPERTIES:
+:CUSTOM_ID: special-char-and-indentation
+:END:
 #+BEGIN_SRC emacs-lisp
   ;; Enable global whitespace mode with preferred styles (shwo special char)
   (require 'whitespace)
@@ -139,6 +189,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 *** Icons and Navigation
+:PROPERTIES:
+:CUSTOM_ID: icons-and-navigation
+:END:
 #+BEGIN_SRC emacs-lisp
   ;; Use package management for managing plugins
   (use-package all-the-icons
@@ -190,6 +243,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 *** Tab Bar Configuration
+:PROPERTIES:
+:CUSTOM_ID: tab-bar-configuration
+:END:
 #+BEGIN_SRC emacs-lisp
   ;; Configure the tab bar appearance and behavior
   (setq tab-bar-close-button-show nil
@@ -223,6 +279,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 *** Indentation & block of code
+:PROPERTIES:
+:CUSTOM_ID: indentation--block-of-code
+:END:
 #+BEGIN_SRC emacs-lisp
 ;; Highlight indentation levels for better code readability
 (use-package indent-guide
@@ -233,12 +292,18 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 *** Line numbers
+:PROPERTIES:
+:CUSTOM_ID: line-numbers
+:END:
 #+BEGIN_SRC emacs-lisp
 ;; Display line numbers in programming modes for easier navigation
 (add-hook 'prog-mode-hook #'display-line-numbers-mode)
 #+END_SRC
 
 *** Remap keys (Putty support)
+:PROPERTIES:
+:CUSTOM_ID: remap-keys-putty-support
+:END:
 #+BEGIN_SRC emacs-lisp
   ;; PuTTY Configuration for Enhanced Key Mapping
   ;; Specific settings are required for using Emacs over PuTTY.
@@ -267,6 +332,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 *** Xterm support
+:PROPERTIES:
+:CUSTOM_ID: xterm-support
+:END:
 #+BEGIN_SRC emacs-lisp
   ;; Use xterm-color for proper ANSI color support in compilation buffers
   (use-package xterm-color
@@ -280,6 +348,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 *** UTF8 or die
+:PROPERTIES:
+:CUSTOM_ID: utf8-or-die
+:END:
 #+BEGIN_SRC emacs-lisp
   ;; UTF-8 Configuration for comprehensive encoding support
   (define-coding-system-alias 'UTF-8 'utf-8)
@@ -297,6 +368,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 :CUSTOM_ID: file-management
 :END:
 *** Auto backup
+:PROPERTIES:
+:CUSTOM_ID: auto-backup
+:END:
 #+BEGIN_SRC emacs-lisp
 ;; Manage Emacs directories for backups and temporary files
 (let ((backup-dir "~/.emacs.d/backups")           ;; Backup directory
@@ -322,6 +396,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 *** Special features
+:PROPERTIES:
+:CUSTOM_ID: special-features
+:END:
 #+BEGIN_SRC emacs-lisp
   ;; Enable features for better usability
   (save-place-mode 1)                     ;; Remember cursor position when closing files
@@ -330,6 +407,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 *** Json mode
+:PROPERTIES:
+:CUSTOM_ID: json-mode
+:END:
 #+BEGIN_SRC emacs-lisp
   ;; JSON mode configuration
   (use-package json-mode
@@ -339,6 +419,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 *** Yaml mode
+:PROPERTIES:
+:CUSTOM_ID: yaml-mode
+:END:
 #+BEGIN_SRC emacs-lisp
   ;; YAML mode configuration
   (use-package yaml-mode
@@ -348,6 +431,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 *** Csv mode
+:PROPERTIES:
+:CUSTOM_ID: csv-mode
+:END:
 #+BEGIN_SRC emacs-lisp
   ;; CSV mode configuration
   (use-package csv-mode
@@ -359,6 +445,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 *** Markdown mode
+:PROPERTIES:
+:CUSTOM_ID: markdown-mode
+:END:
 #+BEGIN_SRC emacs-lisp
   ;; Markdown mode configuration
   (use-package markdown-mode
@@ -370,6 +459,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 *** Org mode
+:PROPERTIES:
+:CUSTOM_ID: org-mode
+:END:
 #+BEGIN_SRC emacs-lisp
   ;; to insert a new TOC : M-x org-make-toc-insert
   ;; to populate TOC : org-make-toc
@@ -380,6 +472,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 *** PDF mode
+:PROPERTIES:
+:CUSTOM_ID: pdf-mode
+:END:
 #+BEGIN_SRC emacs-lisp
   ;; PDF tools configuration (commented out)
    (use-package pdf-tools
@@ -398,6 +493,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 :CUSTOM_ID: code-completion
 :END:
 *** General Emacs
+:PROPERTIES:
+:CUSTOM_ID: general-emacs
+:END:
 #+BEGIN_SRC emacs-lisp
   ;; General Emacs configuration for completion
   (use-package emacs
@@ -408,6 +506,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 *** Snippet
+:PROPERTIES:
+:CUSTOM_ID: snippet
+:END:
 #+BEGIN_SRC emacs-lisp
   ;; Snippet management using yasnippet
   (use-package yasnippet
@@ -418,6 +519,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 *** Vertico
+:PROPERTIES:
+:CUSTOM_ID: vertico
+:END:
 - **Purpose**: Vertico is a vertical completion interface that aims to enhance the completion experience in Emacs. It provides a simple and efficient way to display completion candidates in a vertical list.
 - **Functionality**:
   - Displays completions vertically, making it easy to see multiple options at once without obscuring the text.
@@ -433,6 +537,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 *** Corfu
+:PROPERTIES:
+:CUSTOM_ID: corfu
+:END:
 - **Purpose**: Corfu is a pop-up completion framework that provides in-buffer completion functionality. It aims to improve the way completions are presented while typing.
 - **Functionality**:
   - Displays a pop-up menu of candidates while typing, either as you type or after you hit a specific command.
@@ -469,6 +576,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 *** Dabbrev
+:PROPERTIES:
+:CUSTOM_ID: dabbrev
+:END:
 - **Purpose**: Dabbrev is a built-in Emacs package designed for “dynamic abbreviation expansion.” It aims to facilitate fast and flexible word completion based on what you've previously typed in your current buffer or other buffers.
 - **Functionality**:
   - Searches for words and phrases in all open buffers to provide completion options based on your current input.
@@ -488,6 +598,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 *** Cape
+:PROPERTIES:
+:CUSTOM_ID: cape
+:END:
 - **Purpose**: Cape (Completion At Point Extensions) is a library designed to extend Emacs's completion capabilities. It provides various completion backends and offers an easy way to integrate multiple completion sources.
 - **Functionality**:
   - Works with and enhances existing completion frameworks like Vertico and Corfu.
@@ -633,6 +746,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 :CUSTOM_ID: llms
 :END:
 *** ChatGPT
+:PROPERTIES:
+:CUSTOM_ID: chatgpt
+:END:
 #+BEGIN_SRC emacs-lisp
   ;; gptel
   (use-package gptel
