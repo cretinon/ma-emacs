@@ -376,12 +376,7 @@ The block below contains the *entire* .emacs. Tangle it to generate
   (use-package org-make-toc
     :ensure t
     :hook (org-mode . org-make-toc-mode)
-    :custom (org-make-toc-insert-custom-ids t)
-    :config
-    ;; Optional: update TOC automatically when saving
-    (add-hook 'org-mode-hook
-              (lambda ()
-                (add-hook 'before-save-hook #'org-make-toc nil :local))))
+    :custom (org-make-toc-insert-custom-ids t))
 #+END_SRC
 
 *** PDF mode
