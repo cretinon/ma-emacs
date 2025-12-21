@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: local
+# key: lo
+# --
+
+local __$1
+$0

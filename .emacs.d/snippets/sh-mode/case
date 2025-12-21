@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: case
+# key: case
+# --
+    case "$__" in
+        *str1*|*str2*) ;;
+        *) ;;
+    esac

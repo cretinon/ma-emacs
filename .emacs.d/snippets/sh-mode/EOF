@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: EOF
+# key: EOF
+# --
+
+cat <<EOF > ${1:file}
+    ${2:text}
+EOF
+$0

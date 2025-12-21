@@ -1,0 +1,33 @@
+# -*- mode: snippet -*-
+# name: function
+# key: <f
+# --
+
+#
+# usage: _$1 --option (\$1)
+#
+_$1 () {
+    _func_start "\$@"
+
+    # Check arg
+    #if ! _exist "\$1"; then _error "arg1 EMPTY"; _func_end "$ERROR_ARGV" ; return $ERROR_ARGV ; fi
+    #if ! _fileexist "\$1"; then _error "file $1 not found"; _func_end "$ERROR_ARGV" ; return $ERROR_ARGV ; fi
+    #if ! _installed "my_super_bin" ; then _error "my_super_bin not found"; _func_end "$ERROR_ARGV" ; return $ERROR_ARGV ; fi
+
+    # Declare local var
+    local __return
+    local __result
+
+    # Set local var
+    __return="1"
+
+    # Do what need to be done
+    __result=$($0)
+    __return=$? ; if [ $__return -ne 0 ] ; then _error "unable to XXX"; _func_end "$__return" ; return $__return ; fi
+
+    # Return result and exit
+    echo "$__result"
+
+    _success "$1"
+    _func_end "$__return" ; return $__return
+}

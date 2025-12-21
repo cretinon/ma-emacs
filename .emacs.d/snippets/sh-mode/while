@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: while loop
+# key: |w
+# --
+| while read __${1:var} ; do
+    $0
+done

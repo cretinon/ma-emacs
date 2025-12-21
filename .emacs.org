@@ -70,18 +70,18 @@ The block below contains the *entire* .emacs. Tangle it to generate
   ;; Author: Jacques Cretinon
   ;; Keywords: git, tools
   ;; Package-Requires: ((emacs "26.1"))
-  ;; Version: 0.1
+  ;; Version: 1.0
 
   ;;; Commentary:
   ;;
-  ;; v0.1 is init of my .emacs.org, missing a lot of things and not fully tested
+  ;; v1.0 include some snippets, miss some LLM and doc (.authinfo) but is usable
+
+  ;;; Changelog:
   ;;
+  ;; v0.1 is init of my .emacs.org, missing a lot of things and not fully tested
 
   ;;; Code:
-
-  ;;Overall, this code configures the package management system and ensures `use-package` is available for further configurations.
-
-
+  ;;
   ;;Overall, this code configures the package management system and ensures `use-package` is available for further configurations.
   (require 'package)
   (setq package-enable-at-startup nil)
@@ -221,27 +221,68 @@ The block below contains the *entire* .emacs. Tangle it to generate
   ;; PuTTY Configuration for Enhanced Key Mapping
   ;; Specific settings are required for using Emacs over PuTTY.
   ;; Ensure PuTTY is set to SCO mode and the terminal is configured as xterm-256color.
- ;;(when (eq system-uses-terminfo t
- ;;           (progn
- ;;             ;; Redefine the Escape key as Meta
- ;;             (define-key key-translation-map [\e] [\M])
+  (if (eq system-uses-terminfo t)
+      (progn
+        ;; Redefine the Escape key as Meta
+        (define-key key-translation-map [\e] [\M])
 
-              ;; Map function keys and navigation keys for terminal compatibility
- ;;             (define-key input-decode-map "\e[H" [home])
- ;;             (define-key input-decode-map "\e[F" [end])
- ;;             (define-key input-decode-map "\e[D" [S-left])
- ;;             (define-key input-decode-map "\e[C" [S-right])
- ;;             (define-key input-decode-map "\e[A" [S-up])
- ;;             (define-key input-decode-map "\e[B" [S-down])
- ;;             (define-key input-decode-map "\e[I" [prior])
- ;;             (define-key input-decode-map "\e[G" [next])
-
-              ;; Map function keys F1 to F12
- ;;             (dotimes (i 12)
- ;;               (define-key input-decode-map (format "\e[%d" (i + 1)) (intern (format "f%d" (i + 1))))
- ;;               (define-key input-decode-map (format "\e[%c" (+ i ?a)) (intern (format "S-f%d" (i + 1))))
- ;;               (define-key input-decode-map (format "\e[%c" (+ i ?o)) (intern (format "C-f%d" (i + 1))))
- ;;               (define-key input-decode-map (format "\e\e[%d" (i + 1)) (intern (format "M-f%d" (i + 1))))))))
+        ;; Map function keys and navigation keys for terminal compatibility
+        (define-key input-decode-map "\e[H" [home])
+        (define-key input-decode-map "\e[F" [end])
+        (define-key input-decode-map "\e[D" [S-left])
+        (define-key input-decode-map "\e[C" [S-right])
+        (define-key input-decode-map "\e[A" [S-up])
+        (define-key input-decode-map "\e[B" [S-down])
+        (define-key input-decode-map "\e[I" [prior])
+        (define-key input-decode-map "\e[G" [next])
+        (define-key input-decode-map "\e[M" [f1])
+        (define-key input-decode-map "\e[Y" [S-f1])
+        (define-key input-decode-map "\e[k" [C-f1])
+        (define-key input-decode-map "\e\e[M" [M-f1])
+        (define-key input-decode-map "\e[N" [f2])
+        (define-key input-decode-map "\e[Z" [S-f2])
+        (define-key input-decode-map "\e[l" [C-f2])
+        (define-key input-decode-map "\e\e[N" [M-f2])
+        (define-key input-decode-map "\e[O" [f3])
+        (define-key input-decode-map "\e[a" [S-f3])
+        (define-key input-decode-map "\e[m" [C-f3])
+        (define-key input-decode-map "\e\e[O" [M-f3])
+        (define-key input-decode-map "\e[P" [f4])
+        (define-key input-decode-map "\e[b" [S-f4])
+        (define-key input-decode-map "\e[n" [C-f4])
+        (define-key input-decode-map "\e\e[P" [M-f4])
+        (define-key input-decode-map "\e[Q" [f5])
+        (define-key input-decode-map "\e[c" [S-f5])
+        (define-key input-decode-map "\e[o" [C-f5])
+        (define-key input-decode-map "\e\e[Q" [M-f5])
+        (define-key input-decode-map "\e[R" [f6])
+        (define-key input-decode-map "\e[d" [S-f6])
+        (define-key input-decode-map "\e[p" [C-f6])
+        (define-key input-decode-map "\e\e[R" [M-f6])
+        (define-key input-decode-map "\e[S" [f7])
+        (define-key input-decode-map "\e[e" [S-f7])
+        (define-key input-decode-map "\e[q" [C-f7])
+        (define-key input-decode-map "\e\e[S" [M-f7])
+        (define-key input-decode-map "\e[T" [f8])
+        (define-key input-decode-map "\e[f" [S-f8])
+        (define-key input-decode-map "\e[r" [C-f8])
+        (define-key input-decode-map "\e\e[T" [M-f8])
+        (define-key input-decode-map "\e[U" [f9])
+        (define-key input-decode-map "\e[g" [S-f9])
+        (define-key input-decode-map "\e[s" [C-f9])
+        (define-key input-decode-map "\e\e[U" [M-f9])
+        (define-key input-decode-map "\e[V" [f10])
+        (define-key input-decode-map "\e[h" [S-f10])
+        (define-key input-decode-map "\e[_" [C-f10])
+        (define-key input-decode-map "\e\e[V" [M-f10])
+        (define-key input-decode-map "\e[W" [f11])
+        (define-key input-decode-map "\e[i" [S-f11])
+        (define-key input-decode-map "\e[u" [C-f11])
+        (define-key input-decode-map "\e\e[W" [M-f11])
+        (define-key input-decode-map "\e[X" [f12])
+        (define-key input-decode-map "\e[j" [S-f12])
+        (define-key input-decode-map "\e[v" [C-f12])
+        (define-key input-decode-map "\e\e[X" [M-f12])))
 
   ;; Use xterm-color for proper ANSI color support in compilation buffers
   (use-package xterm-color
@@ -312,11 +353,11 @@ The block below contains the *entire* .emacs. Tangle it to generate
 
   ;; Markdown mode configuration
   (use-package markdown-mode
-      :ensure t
-      :mode ("README\\.md\\'" . gfm-mode)  ;; Associate README.md with gfm-mode
-      :init (setq markdown-command "multimarkdown") ;; Set the markdown command
-      :bind (:map markdown-mode-map
-             ("C-c C-e" . markdown-do))) ;; Keybinding for markdown-do
+    :ensure t
+    :mode ("README\\.md\\'" . gfm-mode)  ;; Associate README.md with gfm-mode
+    :init (setq markdown-command "multimarkdown") ;; Set the markdown command
+    :bind (:map markdown-mode-map
+                ("C-c C-e" . markdown-do))) ;; Keybinding for markdown-do
 
   ;; to insert a new TOC : M-x org-make-toc-insert
   ;; to populate TOC : org-make-toc
@@ -335,6 +376,7 @@ The block below contains the *entire* .emacs. Tangle it to generate
     :config
     (add-hook 'pdf-isearch-minor-mode-hook (lambda () (ctrlf-local-mode -1)))
     (use-package org-pdftools
+      :ensure t
       :hook (org-mode . org-pdftools-setup-link)))
   (add-to-list 'auto-mode-alist '("\\.[pP][dD][fF]\\'" . pdf-view-mode)) ;; Associate PDF files with pdf-view-mode
 
@@ -548,12 +590,12 @@ The block below contains the *entire* .emacs. Tangle it to generate
 
   ;; Allow Magit to search in authinfo for user/password
   (add-hook 'magit-process-find-password-functions
-              'magit-process-password-auth-source)
+            'magit-process-password-auth-source)
 
   ;; Forge integration for enhanced Magit functionality (commented out due to installation issues)
   (use-package forge
     :ensure t
-     :init)
+    :init)
 
   ;; check syntax
   (use-package flycheck
@@ -639,12 +681,6 @@ The block below contains the *entire* .emacs. Tangle it to generate
 :PROPERTIES:
 :CUSTOM_ID: custom-configuration
 :END:
-#+BEGIN_SRC emacs-lisp
-  ;; custom file
-  (setq custom-file "~/.emacs.custom")
-  (load custom-file)
-#+END_SRC
-
 *** We need to save some custom conf
 :PROPERTIES:
 :CUSTOM_ID: we-need-to-save-some-custom-conf
@@ -819,27 +855,68 @@ The block below contains the *entire* .emacs. Tangle it to generate
   ;; PuTTY Configuration for Enhanced Key Mapping
   ;; Specific settings are required for using Emacs over PuTTY.
   ;; Ensure PuTTY is set to SCO mode and the terminal is configured as xterm-256color.
-  (when (eq system-uses-terminfo t
-    (progn
-      ;; Redefine the Escape key as Meta
-      (define-key key-translation-map [\e] [\M])
+  (if (eq system-uses-terminfo t)
+      (progn
+        ;; Redefine the Escape key as Meta
+        (define-key key-translation-map [\e] [\M])
 
-      ;; Map function keys and navigation keys for terminal compatibility
-      (define-key input-decode-map "\e[H" [home])
-      (define-key input-decode-map "\e[F" [end])
-      (define-key input-decode-map "\e[D" [S-left])
-      (define-key input-decode-map "\e[C" [S-right])
-      (define-key input-decode-map "\e[A" [S-up])
-      (define-key input-decode-map "\e[B" [S-down])
-      (define-key input-decode-map "\e[I" [prior])
-      (define-key input-decode-map "\e[G" [next])
-
-      ;; Map function keys F1 to F12
-      (dotimes (i 12)
-        (define-key input-decode-map (format "\e[%d" (i + 1)) (intern (format "f%d" (i + 1))))
-        (define-key input-decode-map (format "\e[%c" (+ i ?a)) (intern (format "S-f%d" (i + 1))))
-        (define-key input-decode-map (format "\e[%c" (+ i ?o)) (intern (format "C-f%d" (i + 1))))
-        (define-key input-decode-map (format "\e\e[%d" (i + 1)) (intern (format "M-f%d" (i + 1)))))))
+        ;; Map function keys and navigation keys for terminal compatibility
+        (define-key input-decode-map "\e[H" [home])
+        (define-key input-decode-map "\e[F" [end])
+        (define-key input-decode-map "\e[D" [S-left])
+        (define-key input-decode-map "\e[C" [S-right])
+        (define-key input-decode-map "\e[A" [S-up])
+        (define-key input-decode-map "\e[B" [S-down])
+        (define-key input-decode-map "\e[I" [prior])
+        (define-key input-decode-map "\e[G" [next])
+        (define-key input-decode-map "\e[M" [f1])
+        (define-key input-decode-map "\e[Y" [S-f1])
+        (define-key input-decode-map "\e[k" [C-f1])
+        (define-key input-decode-map "\e\e[M" [M-f1])
+        (define-key input-decode-map "\e[N" [f2])
+        (define-key input-decode-map "\e[Z" [S-f2])
+        (define-key input-decode-map "\e[l" [C-f2])
+        (define-key input-decode-map "\e\e[N" [M-f2])
+        (define-key input-decode-map "\e[O" [f3])
+        (define-key input-decode-map "\e[a" [S-f3])
+        (define-key input-decode-map "\e[m" [C-f3])
+        (define-key input-decode-map "\e\e[O" [M-f3])
+        (define-key input-decode-map "\e[P" [f4])
+        (define-key input-decode-map "\e[b" [S-f4])
+        (define-key input-decode-map "\e[n" [C-f4])
+        (define-key input-decode-map "\e\e[P" [M-f4])
+        (define-key input-decode-map "\e[Q" [f5])
+        (define-key input-decode-map "\e[c" [S-f5])
+        (define-key input-decode-map "\e[o" [C-f5])
+        (define-key input-decode-map "\e\e[Q" [M-f5])
+        (define-key input-decode-map "\e[R" [f6])
+        (define-key input-decode-map "\e[d" [S-f6])
+        (define-key input-decode-map "\e[p" [C-f6])
+        (define-key input-decode-map "\e\e[R" [M-f6])
+        (define-key input-decode-map "\e[S" [f7])
+        (define-key input-decode-map "\e[e" [S-f7])
+        (define-key input-decode-map "\e[q" [C-f7])
+        (define-key input-decode-map "\e\e[S" [M-f7])
+        (define-key input-decode-map "\e[T" [f8])
+        (define-key input-decode-map "\e[f" [S-f8])
+        (define-key input-decode-map "\e[r" [C-f8])
+        (define-key input-decode-map "\e\e[T" [M-f8])
+        (define-key input-decode-map "\e[U" [f9])
+        (define-key input-decode-map "\e[g" [S-f9])
+        (define-key input-decode-map "\e[s" [C-f9])
+        (define-key input-decode-map "\e\e[U" [M-f9])
+        (define-key input-decode-map "\e[V" [f10])
+        (define-key input-decode-map "\e[h" [S-f10])
+        (define-key input-decode-map "\e[_" [C-f10])
+        (define-key input-decode-map "\e\e[V" [M-f10])
+        (define-key input-decode-map "\e[W" [f11])
+        (define-key input-decode-map "\e[i" [S-f11])
+        (define-key input-decode-map "\e[u" [C-f11])
+        (define-key input-decode-map "\e\e[W" [M-f11])
+        (define-key input-decode-map "\e[X" [f12])
+        (define-key input-decode-map "\e[j" [S-f12])
+        (define-key input-decode-map "\e[v" [C-f12])
+        (define-key input-decode-map "\e\e[X" [M-f12])))
 #+END_SRC
 
 *** Xterm support
@@ -997,6 +1074,7 @@ The block below contains the *entire* .emacs. Tangle it to generate
      :config
      (add-hook 'pdf-isearch-minor-mode-hook (lambda () (ctrlf-local-mode -1)))
      (use-package org-pdftools
+       :ensure t
        :hook (org-mode . org-pdftools-setup-link)))
    (add-to-list 'auto-mode-alist '("\\.[pP][dD][fF]\\'" . pdf-view-mode)) ;; Associate PDF files with pdf-view-mode
 #+END_SRC
@@ -1062,7 +1140,7 @@ The block below contains the *entire* .emacs. Tangle it to generate
 
 #+BEGIN_SRC emacs-lisp
   ;; Pop-up completion using corfu
-  (use-package corfu-
+  (use-package corfu
     :ensure t
     :custom
     ;; Customize corfu behavior
@@ -1106,7 +1184,7 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+BEGIN_SRC emacs-lisp
   ;; Dabbrev configuration for buffer completion
   (use-package dabbrev
-    :defer t
+    :ensure t
     :custom
     (dabbrev-upcase-means-case-search t)    ;; Treat case sensitivity with upcase characters
     (dabbrev-check-all-buffers t)            ;; Check all buffers for completion
