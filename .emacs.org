@@ -102,14 +102,10 @@ The block below contains the *entire* .emacs. Tangle it to generate
   (require 'use-package)
 
   ;; if we need to call debbuger on specific call
-  (debug-on-entry 'package-initialize)
+  ;;(debug-on-entry 'package-initialize)
 
   ;; if we need to refresh melpa pkg list
-  (package-refresh-contents)
-
-  ;; custom file
-  (setq custom-file "~/.emacs.custom")
-  (load custom-file)
+  ;;(package-refresh-contents)
 
   ;; Load and activate the Cyberpunk theme
   (setq custom-file "~/.emacs.custom")
@@ -225,47 +221,47 @@ The block below contains the *entire* .emacs. Tangle it to generate
   ;; PuTTY Configuration for Enhanced Key Mapping
   ;; Specific settings are required for using Emacs over PuTTY.
   ;; Ensure PuTTY is set to SCO mode and the terminal is configured as xterm-256color.
-  (when (eq system-uses-terminfo t
-            (progn
-              ;; Redefine the Escape key as Meta
-              (define-key key-translation-map [\e] [\M])
+ ;;(when (eq system-uses-terminfo t
+ ;;           (progn
+ ;;             ;; Redefine the Escape key as Meta
+ ;;             (define-key key-translation-map [\e] [\M])
 
               ;; Map function keys and navigation keys for terminal compatibility
-              (define-key input-decode-map "\e[H" [home])
-              (define-key input-decode-map "\e[F" [end])
-              (define-key input-decode-map "\e[D" [S-left])
-              (define-key input-decode-map "\e[C" [S-right])
-              (define-key input-decode-map "\e[A" [S-up])
-              (define-key input-decode-map "\e[B" [S-down])
-              (define-key input-decode-map "\e[I" [prior])
-              (define-key input-decode-map "\e[G" [next])
+ ;;             (define-key input-decode-map "\e[H" [home])
+ ;;             (define-key input-decode-map "\e[F" [end])
+ ;;             (define-key input-decode-map "\e[D" [S-left])
+ ;;             (define-key input-decode-map "\e[C" [S-right])
+ ;;             (define-key input-decode-map "\e[A" [S-up])
+ ;;             (define-key input-decode-map "\e[B" [S-down])
+ ;;             (define-key input-decode-map "\e[I" [prior])
+ ;;             (define-key input-decode-map "\e[G" [next])
 
               ;; Map function keys F1 to F12
-              (dotimes (i 12)
-                (define-key input-decode-map (format "\e[%d" (i + 1)) (intern (format "f%d" (i + 1))))
-                (define-key input-decode-map (format "\e[%c" (+ i ?a)) (intern (format "S-f%d" (i + 1))))
-                (define-key input-decode-map (format "\e[%c" (+ i ?o)) (intern (format "C-f%d" (i + 1))))
-                (define-key input-decode-map (format "\e\e[%d" (i + 1)) (intern (format "M-f%d" (i + 1)))))))
+ ;;             (dotimes (i 12)
+ ;;               (define-key input-decode-map (format "\e[%d" (i + 1)) (intern (format "f%d" (i + 1))))
+ ;;               (define-key input-decode-map (format "\e[%c" (+ i ?a)) (intern (format "S-f%d" (i + 1))))
+ ;;               (define-key input-decode-map (format "\e[%c" (+ i ?o)) (intern (format "C-f%d" (i + 1))))
+ ;;               (define-key input-decode-map (format "\e\e[%d" (i + 1)) (intern (format "M-f%d" (i + 1))))))))
 
-    ;; Use xterm-color for proper ANSI color support in compilation buffers
-    (use-package xterm-color-
-      :ensure t)
+  ;; Use xterm-color for proper ANSI color support in compilation buffers
+  (use-package xterm-color
+    :ensure t)
 
-    ;; Set the compilation environment to use xterm-256color
-    (setq compilation-environment '("TERM=xterm-256color"))
+  ;; Set the compilation environment to use xterm-256color
+  (setq compilation-environment '("TERM=xterm-256color"))
 
-    ;; Enable mouse support in terminal
-    (xterm-mouse-mode t)
+  ;; Enable mouse support in terminal
+  (xterm-mouse-mode t)
 
-    ;; UTF-8 Configuration for comprehensive encoding support
-    (define-coding-system-alias 'UTF-8 'utf-8)
-    (set-charset-priority 'unicode)
-    (setq locale-coding-system 'utf-8)
-    (set-terminal-coding-system 'utf-8)
-    (set-keyboard-coding-system 'utf-8)
-    (set-selection-coding-system 'utf-8)
-    (prefer-coding-system 'utf-8)
-    (setq default-process-coding-system '(utf-8-unix . utf-8-unix))
+  ;; UTF-8 Configuration for comprehensive encoding support
+  (define-coding-system-alias 'UTF-8 'utf-8)
+  (set-charset-priority 'unicode)
+  (setq locale-coding-system 'utf-8)
+  (set-terminal-coding-system 'utf-8)
+  (set-keyboard-coding-system 'utf-8)
+  (set-selection-coding-system 'utf-8)
+  (prefer-coding-system 'utf-8)
+  (setq default-process-coding-system '(utf-8-unix . utf-8-unix))
 
   ;; Manage Emacs directories for backups and temporary files
   (let ((backup-dir "~/.emacs.d/backups")           ;; Backup directory
@@ -364,7 +360,7 @@ The block below contains the *entire* .emacs. Tangle it to generate
     (vertico-mode)) ;; Enable vertico mode for a vertical completion UI
 
   ;; Pop-up completion using corfu
-  (use-package corfu-
+  (use-package corfu
     :ensure t
     :custom
     ;; Customize corfu behavior
@@ -390,7 +386,7 @@ The block below contains the *entire* .emacs. Tangle it to generate
 
   ;; Dabbrev configuration for buffer completion
   (use-package dabbrev
-    :defer t
+    :ensure t
     :custom
     (dabbrev-upcase-means-case-search t)    ;; Treat case sensitivity with upcase characters
     (dabbrev-check-all-buffers t)            ;; Check all buffers for completion
