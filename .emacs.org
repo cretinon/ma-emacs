@@ -133,6 +133,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 :PROPERTIES:
 :CUSTOM_ID: custom-configuration
 :END:
+PROPERTIES:
+:CUSTOM_ID: custom-configuration
+:END:
 *** We need to save some custom conf
 :PROPERTIES:
 :CUSTOM_ID: we-need-to-save-some-custom-conf
@@ -464,6 +467,7 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+BEGIN_SRC emacs-lisp
   ;; to insert a new TOC : M-x org-make-toc-insert
   ;; to populate TOC : org-make-toc
+  ;; to auto update toc : org-make-toc-mode
   (use-package org-make-toc
     :ensure t
     :hook (org-mode . org-make-toc-mode)

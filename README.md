@@ -2,5 +2,5 @@
 ma-emacs is my emacs configuration.
 
 # How to...
-Everything is in **.ma-emacs.org**.
+Everything is in **.emacs.org**.
 Open it in emacs.
