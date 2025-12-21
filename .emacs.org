@@ -9,18 +9,50 @@ read the commentary and evaluate code *step by step* from Emacs.
 
 * Table of Contents
 :PROPERTIES:
-:TOC:      :include all :depth 3 :force (depth) :ignore (this) :local (depth)
+:TOC:      :include all :ignore (this)
 :END:
 :CONTENTS:
 - [[#full-library-source-tangled-to-emacs][Full Library Source (tangled to .emacs)]]
 - [[#step-by-step-explanations][Step-by-step explanations]]
   - [[#use-package][Use package]]
+    - [[#pre-requisite][Pre requisite]]
+    - [[#debug-use-package][Debug use package]]
+    - [[#refresh-packages][Refresh packages]]
   - [[#custom-configuration][Custom configuration]]
+    - [[#we-need-to-save-some-custom-conf][We need to save some custom conf]]
   - [[#emacs-ui][Emacs UI]]
+    - [[#theme-configuration][Theme Configuration]]
+    - [[#ui-tweaks][UI Tweaks]]
+    - [[#special-char-and-indentation][Special char and indentation]]
+    - [[#icons-and-navigation][Icons and Navigation]]
+    - [[#tab-bar-configuration][Tab Bar Configuration]]
+    - [[#indentation-and-block-of-code][Indentation and block of code]]
+    - [[#line-numbers][Line numbers]]
+    - [[#remap-keys-for-putty-support][Remap keys for Putty support]]
+    - [[#xterm-support][Xterm support]]
+    - [[#utf8-or-die][UTF8 or die]]
   - [[#file-management][File management]]
+    - [[#auto-backup][Auto backup]]
+    - [[#special-features][Special features]]
+    - [[#json-mode][Json mode]]
+    - [[#yaml-mode][Yaml mode]]
+    - [[#csv-mode][Csv mode]]
+    - [[#markdown-mode][Markdown mode]]
+    - [[#org-mode][Org mode]]
+    - [[#pdf-mode][PDF mode]]
   - [[#code-completion][Code completion]]
+    - [[#general-emacs][General Emacs]]
+    - [[#snippet][Snippet]]
+    - [[#vertico][Vertico]]
+    - [[#corfu][Corfu]]
+    - [[#dabbrev][Dabbrev]]
+    - [[#cape][Cape]]
   - [[#magit][Magit]]
   - [[#llms][LLMs]]
+    - [[#chatgpt][ChatGPT]]
+      - [[#explain-how-to-configure-authinfo][explain how to configure .authinfo]]
+      - [[#we-may-want-to-keep-same-buffer][we may want to keep same buffer]]
+      - [[#we-may-want-to-split-window-statically][we may want to split window statically]]
 - [[#license][License]]
 :END:
 
@@ -105,9 +137,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 :PROPERTIES:
 :CUSTOM_ID: custom-configuration
 :END:
-*** We'll need to save some custom conf
+*** We need to save some custom conf
 :PROPERTIES:
-:CUSTOM_ID: well-need-to-save-some-custom-conf
+:CUSTOM_ID: we-need-to-save-some-custom-conf
 :END:
 #+BEGIN_SRC emacs-lisp
   ;; Load and activate the Cyberpunk theme
@@ -251,7 +283,7 @@ The block below contains the *entire* .emacs. Tangle it to generate
 
 *** Indentation and block of code
 :PROPERTIES:
-:CUSTOM_ID: indentation--block-of-code
+:CUSTOM_ID: indentation-and-block-of-code
 :END:
 #+BEGIN_SRC emacs-lisp
 ;; Highlight indentation levels for better code readability
@@ -273,7 +305,7 @@ The block below contains the *entire* .emacs. Tangle it to generate
 
 *** Remap keys for Putty support
 :PROPERTIES:
-:CUSTOM_ID: remap-keys-putty-support
+:CUSTOM_ID: remap-keys-for-putty-support
 :END:
 #+BEGIN_SRC emacs-lisp
   ;; PuTTY Configuration for Enhanced Key Mapping
@@ -727,11 +759,20 @@ The block below contains the *entire* .emacs. Tangle it to generate
     :init)
 #+END_SRC
 **** TODO explain how to configure .authinfo
+:PROPERTIES:
+:CUSTOM_ID: explain-how-to-configure-authinfo
+:END:
 
 **** TODO we may want to keep same buffer
+:PROPERTIES:
+:CUSTOM_ID: we-may-want-to-keep-same-buffer
+:END:
 
 
 **** TODO we may want to split window statically
+:PROPERTIES:
+:CUSTOM_ID: we-may-want-to-split-window-statically
+:END:
 
 * License
 :PROPERTIES:
