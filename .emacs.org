@@ -9,47 +9,18 @@ read the commentary and evaluate code *step by step* from Emacs.
 
 * Table of Contents
 :PROPERTIES:
-:TOC:      :include all :depth 4 :force (depth) :ignore (this) :local (depth)
+:TOC:      :include all :depth 3 :force (depth) :ignore (this) :local (depth)
 :END:
 :CONTENTS:
 - [[#full-library-source-tangled-to-emacs][Full Library Source (tangled to .emacs)]]
 - [[#step-by-step-explanations][Step-by-step explanations]]
   - [[#use-package][Use package]]
-    - [[#pre-requisite][Pre requisite]]
-    - [[#debug-use-package][Debug use package]]
-    - [[#refresh-packages][Refresh packages]]
   - [[#custom-configuration][Custom configuration]]
-    - [[#well-need-to-save-some-custom-conf][We'll need to save some custom conf]]
   - [[#emacs-ui][Emacs UI]]
-    - [[#theme-configuration][Theme Configuration]]
-    - [[#ui-tweaks][UI Tweaks]]
-    - [[#special-char-and-indentation][Special char and indentation]]
-    - [[#icons-and-navigation][Icons and Navigation]]
-    - [[#tab-bar-configuration][Tab Bar Configuration]]
-    - [[#indentation--block-of-code][Indentation & block of code]]
-    - [[#line-numbers][Line numbers]]
-    - [[#remap-keys-putty-support][Remap keys (Putty support)]]
-    - [[#xterm-support][Xterm support]]
-    - [[#utf8-or-die][UTF8 or die]]
   - [[#file-management][File management]]
-    - [[#auto-backup][Auto backup]]
-    - [[#special-features][Special features]]
-    - [[#json-mode][Json mode]]
-    - [[#yaml-mode][Yaml mode]]
-    - [[#csv-mode][Csv mode]]
-    - [[#markdown-mode][Markdown mode]]
-    - [[#org-mode][Org mode]]
-    - [[#pdf-mode][PDF mode]]
   - [[#code-completion][Code completion]]
-    - [[#general-emacs][General Emacs]]
-    - [[#snippet][Snippet]]
-    - [[#vertico][Vertico]]
-    - [[#corfu][Corfu]]
-    - [[#dabbrev][Dabbrev]]
-    - [[#cape][Cape]]
   - [[#magit-][Magit !]]
   - [[#llms][LLMs]]
-    - [[#chatgpt][ChatGPT]]
 - [[#license][License]]
 :END:
 
@@ -788,3 +759,8 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+# Local Variables:
+# before-save-hook: org-make-toc
+# End:
