@@ -20,10 +20,14 @@ read the commentary and evaluate code *step by step* from Emacs.
   - [[#file-management][File management]]
   - [[#code-completion][Code completion]]
   - [[#magit-][Magit !]]
+  - [[#llms][LLMs]]
 - [[#license][License]]
 :END:
 
 * Full Library Source (tangled to =.emacs=)
+:PROPERTIES:
+:CUSTOM_ID: full-library-source-tangled-to-emacs
+:END:
 
 The block below contains the *entire* .emacs. Tangle it to generate
 =.emacs= then copy it to your home directory.
@@ -47,7 +51,13 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+end_src
 
 * Step-by-step explanations
+:PROPERTIES:
+:CUSTOM_ID: step-by-step-explanations
+:END:
 ** Use package
+:PROPERTIES:
+:CUSTOM_ID: use-package
+:END:
 *** Pre requisite
 #+BEGIN_SRC emacs-lisp
   ;;Overall, this code configures the package management system and ensures `use-package` is available for further configurations.
@@ -83,6 +93,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 ** Custom configuration
+:PROPERTIES:
+:CUSTOM_ID: custom-configuration
+:END:
 *** We'll need to save some custom conf
 #+BEGIN_SRC emacs-lisp
   ;; Load and activate the Cyberpunk theme
@@ -91,6 +104,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 ** Emacs UI
+:PROPERTIES:
+:CUSTOM_ID: emacs-ui
+:END:
 *** Theme Configuration
 #+BEGIN_SRC emacs-lisp
   ;; Load and activate the Cyberpunk theme
@@ -108,13 +124,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
   (menu-bar-mode 1)    ;; Enable the menu bar
   (tab-line-mode 1)    ;; Enable the tab line
   (transient-mark-mode 1) ;; Enable transient mark mode for visual feedback in selections
-#+END_SRC
-
-*** Disable Splash Screen
-#+BEGIN_SRC emacs-lisp
-  ;; Prevent the splash screen from appearing at startup
-  (setq-default inhibit-splash-screen t)
-#+END_SRC
+  (setq-default inhibit-splash-screen t) ;; Prevent the splash screen from appearing at startup
+  (fset 'yes-or-no-p 'y-or-n-p) ;; Replace yes/no prompts with y/n for convenience
+  #+END_SRC
 
 *** Special char and indentation
 #+BEGIN_SRC emacs-lisp
@@ -124,12 +136,6 @@ The block below contains the *entire* .emacs. Tangle it to generate
   (global-whitespace-mode 1)
   ;; Do not use tab for indentation
   (setq-default indent-tabs-mode nil) ;; Use spaces instead of tabs for indentation
-#+END_SRC
-
-*** Simplified Yes/No Prompts
-#+BEGIN_SRC emacs-lisp
-  ;; Replace yes/no prompts with y/n for convenience
-  (fset 'yes-or-no-p 'y-or-n-p)
 #+END_SRC
 
 *** Icons and Navigation
@@ -287,6 +293,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 ** File management
+:PROPERTIES:
+:CUSTOM_ID: file-management
+:END:
 *** Auto backup
 #+BEGIN_SRC emacs-lisp
 ;; Manage Emacs directories for backups and temporary files
@@ -365,7 +374,14 @@ The block below contains the *entire* .emacs. Tangle it to generate
   ;; to insert a new TOC : M-x org-make-toc-insert
   ;; to populate TOC : org-make-toc
   (use-package org-make-toc
-                :ensure t)
+    :ensure t
+    :hook (org-mode . org-make-toc-mode)
+    :custom (org-make-toc-insert-custom-ids t)
+    :config
+    ;; Optional: update TOC automatically when saving
+    (add-hook 'org-mode-hook
+              (lambda ()
+                (add-hook 'before-save-hook #'org-make-toc nil :local))))
 #+END_SRC
 
 *** PDF mode
@@ -383,6 +399,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 ** Code completion
+:PROPERTIES:
+:CUSTOM_ID: code-completion
+:END:
 *** General Emacs
 #+BEGIN_SRC emacs-lisp
   ;; General Emacs configuration for completion
@@ -499,6 +518,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 ** Magit !
+:PROPERTIES:
+:CUSTOM_ID: magit-
+:END:
 #+BEGIN_SRC emacs-lisp
 ;; Magit configuration for Git integration
 (use-package magit
@@ -611,7 +633,28 @@ The block below contains the *entire* .emacs. Tangle it to generate
    :init)
 #+END_SRC
 
+** LLMs
+:PROPERTIES:
+:CUSTOM_ID: llms
+:END:
+*** ChatGPT
+#+BEGIN_SRC emacs-lisp
+  ;; gptel
+  (use-package gptel
+    :ensure t
+    :init)
+#+END_SRC
+**** TODO explain how to configure .authinfo
+
+**** TODO we may want to keep same buffer
+
+
+**** TODO we may want to split window statically
+
 * License
+:PROPERTIES:
+:CUSTOM_ID: license
+:END:
 
 MIT License
 
