@@ -19,7 +19,7 @@ read the commentary and evaluate code *step by step* from Emacs.
   - [[#emacs-ui][Emacs UI]]
   - [[#file-management][File management]]
   - [[#code-completion][Code completion]]
-  - [[#magit-][Magit !]]
+  - [[#magit][Magit]]
   - [[#llms][LLMs]]
 - [[#license][License]]
 :END:
@@ -249,7 +249,7 @@ The block below contains the *entire* .emacs. Tangle it to generate
   (global-set-key (kbd "<f4>") 'tab-next)
 #+END_SRC
 
-*** Indentation & block of code
+*** Indentation and block of code
 :PROPERTIES:
 :CUSTOM_ID: indentation--block-of-code
 :END:
@@ -271,7 +271,7 @@ The block below contains the *entire* .emacs. Tangle it to generate
 (add-hook 'prog-mode-hook #'display-line-numbers-mode)
 #+END_SRC
 
-*** Remap keys (Putty support)
+*** Remap keys for Putty support
 :PROPERTIES:
 :CUSTOM_ID: remap-keys-putty-support
 :END:
@@ -596,9 +596,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
   )
 #+END_SRC
 
-** Magit !
+** Magit
 :PROPERTIES:
-:CUSTOM_ID: magit-
+:CUSTOM_ID: magit
 :END:
 #+BEGIN_SRC emacs-lisp
 ;; Magit configuration for Git integration
