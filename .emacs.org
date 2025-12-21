@@ -1,9 +1,3 @@
-#+TITLE: .emacs — Configuration & explanation of my .emacs
-#+AUTHOR: Jacques Cretinon
-#+DATE: <2025-12-21>
-#+OPTIONS: toc:2 num:t ^:{}
-#+PROPERTY: header-args:emacs-lisp :results output :exports both
-
 This Org file is a *literate* version of my =.emacs=. It lets you
 read the commentary and evaluate code *step by step* from Emacs.
 
