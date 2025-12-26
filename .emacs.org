@@ -1437,18 +1437,18 @@ The block below contains the *entire* .emacs. Tangle it to generate
 **** OpenAI
 #+BEGIN_SRC emacs-lisp
   (setq gptel-openai-backend
-        (gptel-make-openai "OpenAI"
-          :key (auth-source-pick-first-password :host "api.openai.com")
-          :host "api.openai.com"
-          :models '("gpt-4o-mini" "gpt-4.1" "o4-mini")))
-#+END_SRC
+      (gptel-make-openai "OpenAI"
+        :host "api.openai.com"
+        :models '("gpt-4o-mini" "gpt-4.1" "o4-mini")))
+  #+END_SRC
 **** Gemini
 #+BEGIN_SRC emacs-lisp
   (setq gptel-gemini-backend
         (gptel-make-gemini "Gemini"
-          :key (auth-source-pick-first-password :host "generativelanguage.googleapis.com")
-          :stream t  ;; streaming pris en charge par le backend Gemini
-          :models '("gemini-2.0-flash" "gemini-1.5-pro" "gemini-1.5-flash")))
+          :key #'gptel-api-key-from-auth-source
+          :stream t
+          :host "generativelanguage.googleapis.com"
+          :models '("gemini-2.5-flash")))
 #+END_SRC
 **** Copilot
 #+BEGIN_SRC emacs-lisp
