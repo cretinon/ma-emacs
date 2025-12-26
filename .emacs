@@ -31,7 +31,7 @@
 (package-initialize)
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
-  (package-install 'use-package))
+ (package-install 'use-package))
 (require 'use-package)
 
 ;; if we need to call debbuger on specific call
@@ -294,11 +294,12 @@
 
 ;; to insert a new TOC : M-x org-make-toc-insert
 ;; to populate TOC : org-make-toc
-;; to auto update toc : org-make-toc-mode
+;; to auto update toc : org-maketoc-mode
 (use-package org-make-toc
   :ensure t
   :hook (org-mode . org-make-toc-mode)
-  :custom (org-make-toc-insert-custom-ids t))
+  ;;  :custom (org-make-toc-insert-custom-ids t)
+  )
 (setq org-support-shift-select t)
 
 ;; PDF tools configuration (commented out)
@@ -312,6 +313,9 @@
     :ensure t
     :hook (org-mode . org-pdftools-setup-link)))
 (add-to-list 'auto-mode-alist '("\\.[pP][dD][fF]\\'" . pdf-view-mode)) ;; Associate PDF files with pdf-view-mode
+
+;; Allow local emacs variable to be set in the file
+(setq enable-local-variables :all)
 
 ;; General Emacs configuration for completion
 (use-package emacs
@@ -540,6 +544,22 @@
 (use-package gptel
   :ensure t
   :init)
+(setq gptel-default-mode 'org-mode)
+
+(setq gptel-openai-backend
+      (gptel-make-openai "OpenAI"
+        :host "api.openai.com"
+        :models '("gpt-4o-mini" "gpt-4.1" "o4-mini")))
+
+(setq gptel-gemini-backend
+      (gptel-make-gemini "Gemini"
+        :key #'gptel-api-key-from-auth-source
+        :stream t
+        :host "generativelanguage.googleapis.com"
+        :models '("gemini-2.5-flash")))
+
+(setq gptel-copilot-backend
+      (gptel-make-gh-copilot "Copilot Chat"))
 
 (defun reload-init-file ()
   (interactive)
@@ -550,6 +570,7 @@
 (global-set-key (kbd "C-c SPC") 'copy-region-as-kill)
 (global-set-key (kbd "C-v") 'yank)
 (global-set-key (kbd "C-x SPC") 'kill-region)
+(global-set-key (kbd "C-c t") 'toggle-truncate-lines)
 
 (use-package marginalia
   :ensure t

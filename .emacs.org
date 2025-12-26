@@ -8,7 +8,7 @@ read the commentary and evaluate code *step by step* from Emacs.
 
 * Table of Contents
 :PROPERTIES:
-:TOC:      :include all :ignore (this) :depth 3
+:TOC:      :include all :ignore (this) :depth 4
 :END:
 :CONTENTS:
 - [[#full-library-source-tangled-to-emacs][Full Library Source (tangled to .emacs)]]
@@ -39,6 +39,7 @@ read the commentary and evaluate code *step by step* from Emacs.
     - [[#markdown-mode][Markdown mode]]
     - [[#org-mode][Org mode]]
     - [[#pdf-mode][PDF mode]]
+    - [[#all-mode][All mode]]
   - [[#code-completion][Code completion]]
     - [[#general-emacs][General Emacs]]
     - [[#snippet][Snippet]]
@@ -50,7 +51,10 @@ read the commentary and evaluate code *step by step* from Emacs.
   - [[#magit][Magit]]
   - [[#syntax-check][Syntax check]]
   - [[#llms][LLMs]]
-    - [[#chatgpt][ChatGPT]]
+    - [[#common][Common]]
+      - [[#openai][OpenAI]]
+      - [[#gemini][Gemini]]
+      - [[#copilot][Copilot]]
   - [[#usefull-key-binding][Usefull Key Binding]]
   - [[#interactive-help][Interactive Help]]
 - [[#license][License]]
@@ -65,22 +69,22 @@ The block below contains the *entire* .emacs. Tangle it to generate
 =.emacs= then copy it to your home directory. (org-bable-tangle)
 
 #+begin_src emacs-lisp :tangle .emacs :mkdirp yes
-  ;;; .emacs --- Create GitHub repos safely from Emacs (auth-source) -*- lexical-binding: t; -*-
+        ;;; .emacs --- Create GitHub repos safely from Emacs (auth-source) -*- lexical-binding: t; -*-
 
   ;; Author: Jacques Cretinon
   ;; Keywords: git, tools
   ;; Package-Requires: ((emacs "26.1"))
   ;; Version: 1.0
 
-  ;;; Commentary:
+        ;;; Commentary:
   ;;
   ;; v1.0 include some snippets, miss some LLM and doc (.authinfo) but is usable
 
-  ;;; Changelog:
+        ;;; Changelog:
   ;;
   ;; v0.1 is init of my .emacs.org, missing a lot of things and not fully tested
 
-  ;;; Code:
+        ;;; Code:
   ;;
   ;;Overall, this code configures the package management system and ensures `use-package` is available for further configurations.
   (require 'package)
@@ -380,6 +384,9 @@ The block below contains the *entire* .emacs. Tangle it to generate
       :hook (org-mode . org-pdftools-setup-link)))
   (add-to-list 'auto-mode-alist '("\\.[pP][dD][fF]\\'" . pdf-view-mode)) ;; Associate PDF files with pdf-view-mode
 
+  ;; Allow local emacs variable to be set in the file
+  (setq enable-local-variables :all)
+
   ;; General Emacs configuration for completion
   (use-package emacs
     :custom
@@ -607,6 +614,22 @@ The block below contains the *entire* .emacs. Tangle it to generate
   (use-package gptel
     :ensure t
     :init)
+  (setq gptel-default-mode 'org-mode)
+
+  (setq gptel-openai-backend
+        (gptel-make-openai "OpenAI"
+          :host "api.openai.com"
+          :models '("gpt-4o-mini" "gpt-4.1" "o4-mini")))
+
+  (setq gptel-gemini-backend
+        (gptel-make-gemini "Gemini"
+          :key #'gptel-api-key-from-auth-source
+          :stream t
+          :host "generativelanguage.googleapis.com"
+          :models '("gemini-2.5-flash")))
+
+  (setq gptel-copilot-backend
+        (gptel-make-gh-copilot "Copilot Chat"))
 
   (defun reload-init-file ()
     (interactive)
@@ -617,6 +640,7 @@ The block below contains the *entire* .emacs. Tangle it to generate
   (global-set-key (kbd "C-c SPC") 'copy-region-as-kill)
   (global-set-key (kbd "C-v") 'yank)
   (global-set-key (kbd "C-x SPC") 'kill-region)
+  (global-set-key (kbd "C-c t") 'toggle-truncate-lines)
 
   (use-package marginalia
     :ensure t
@@ -1079,6 +1103,15 @@ The block below contains the *entire* .emacs. Tangle it to generate
    (add-to-list 'auto-mode-alist '("\\.[pP][dD][fF]\\'" . pdf-view-mode)) ;; Associate PDF files with pdf-view-mode
 #+END_SRC
 
+*** All mode
+:PROPERTIES:
+:CUSTOM_ID: all-mode
+:END:
+#+BEGIN_SRC emacs-lisp
+  ;; Allow local emacs variable to be set in the file
+  (setq enable-local-variables :all)
+#+END_SRC
+
 ** Code completion
 :PROPERTIES:
 :CUSTOM_ID: code-completion
@@ -1393,35 +1426,37 @@ The block below contains the *entire* .emacs. Tangle it to generate
 #+END_SRC
 
 ** LLMs
-:PROPERTIES:
-:CUSTOM_ID: llms
-:END:
-*** ChatGPT
-:PROPERTIES:
-:CUSTOM_ID: chatgpt
-:END:
+*** Common
 #+BEGIN_SRC emacs-lisp
   ;; gptel
   (use-package gptel
     :ensure t
     :init)
+  (setq gptel-default-mode 'org-mode)
 #+END_SRC
-**** TODO explain how to configure .authinfo
-:PROPERTIES:
-:CUSTOM_ID: explain-how-to-configure-authinfo
-:END:
+**** OpenAI
+#+BEGIN_SRC emacs-lisp
+  (setq gptel-openai-backend
+        (gptel-make-openai "OpenAI"
+          :key (auth-source-pick-first-password :host "api.openai.com")
+          :host "api.openai.com"
+          :models '("gpt-4o-mini" "gpt-4.1" "o4-mini")))
+#+END_SRC
+**** Gemini
+#+BEGIN_SRC emacs-lisp
+  (setq gptel-gemini-backend
+        (gptel-make-gemini "Gemini"
+          :key (auth-source-pick-first-password :host "generativelanguage.googleapis.com")
+          :stream t  ;; streaming pris en charge par le backend Gemini
+          :models '("gemini-2.0-flash" "gemini-1.5-pro" "gemini-1.5-flash")))
+#+END_SRC
+**** Copilot
+#+BEGIN_SRC emacs-lisp
+  (setq gptel-copilot-backend
+        (gptel-make-gh-copilot "Copilot Chat"))
+#+END_SRC
 
-**** TODO we may want to keep same buffer
-:PROPERTIES:
-:CUSTOM_ID: we-may-want-to-keep-same-buffer
-:END:
-
-**** TODO we may want to split window statically
-:PROPERTIES:
-:CUSTOM_ID: we-may-want-to-split-window-statically
-:END:
-
-
+#+RESULTS:
 
 ** Usefull Key Binding
 :PROPERTIES:
@@ -1437,6 +1472,7 @@ The block below contains the *entire* .emacs. Tangle it to generate
   (global-set-key (kbd "C-c SPC") 'copy-region-as-kill)
   (global-set-key (kbd "C-v") 'yank)
   (global-set-key (kbd "C-x SPC") 'kill-region)
+  (global-set-key (kbd "C-c t") 'toggle-truncate-lines)
 #+END_SRC
 
 ** Interactive Help
