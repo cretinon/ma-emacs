@@ -565,6 +565,12 @@
       (gptel-make-gh-copilot "Copilot Chat"))
 
 
+(setq gptel-mistral-backend
+      (gptel-make-openai "Mistral"
+        :key #'gptel-api-key-from-auth-source
+        :host "api.mistral.ai"
+        :models '("mistral-medium" "mistral-large")))
+
 (defun reload-init-file ()
   (interactive)
   (load-file user-init-file))

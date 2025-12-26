@@ -4,7 +4,7 @@
 #+PROPERTY: header-args:emacs-lisp :results output :exports both
 
 This Org file is a *literate* version of my =.emacs=. It lets you
-read the commentary and evaluate code *step by step* from Emacs.
+read the commentary and evalate code *step by step* from Emacs.
 
 * Table of Contents
 :PROPERTIES:
@@ -54,6 +54,7 @@ read the commentary and evaluate code *step by step* from Emacs.
     - [[#common][Common]]
       - [[#openai][OpenAI]]
       - [[#gemini][Gemini]]
+      - [[#mistral][Mistral]]
       - [[#copilot][Copilot]]
   - [[#usefull-key-binding][Usefull Key Binding]]
   - [[#interactive-help][Interactive Help]]
@@ -69,22 +70,22 @@ The block below contains the *entire* .emacs. Tangle it to generate
 =.emacs= then copy it to your home directory. (org-bable-tangle)
 
 #+begin_src emacs-lisp :tangle .emacs :mkdirp yes
-        ;;; .emacs --- Create GitHub repos safely from Emacs (auth-source) -*- lexical-binding: t; -*-
+              ;;; .emacs --- Create GitHub repos safely from Emacs (auth-source) -*- lexical-binding: t; -*-
 
   ;; Author: Jacques Cretinon
   ;; Keywords: git, tools
   ;; Package-Requires: ((emacs "26.1"))
   ;; Version: 1.0
 
-        ;;; Commentary:
+              ;;; Commentary:
   ;;
   ;; v1.0 include some snippets, miss some LLM and doc (.authinfo) but is usable
 
-        ;;; Changelog:
+              ;;; Changelog:
   ;;
   ;; v0.1 is init of my .emacs.org, missing a lot of things and not fully tested
 
-        ;;; Code:
+              ;;; Code:
   ;;
   ;;Overall, this code configures the package management system and ensures `use-package` is available for further configurations.
   (require 'package)
@@ -385,7 +386,8 @@ The block below contains the *entire* .emacs. Tangle it to generate
   (add-to-list 'auto-mode-alist '("\\.[pP][dD][fF]\\'" . pdf-view-mode)) ;; Associate PDF files with pdf-view-mode
 
   ;; Allow local emacs variable to be set in the file
-  (setq enable-local-variables :all)
+  (setq enable-local-variables :all
+        enable-local-eval t)
 
   ;; General Emacs configuration for completion
   (use-package emacs
@@ -614,12 +616,22 @@ The block below contains the *entire* .emacs. Tangle it to generate
   (use-package gptel
     :ensure t
     :init)
+
+  (require 'gptel-org) ;; Ensure gptel-org module is loaded
+
   (setq gptel-default-mode 'org-mode)
 
   (setq gptel-openai-backend
         (gptel-make-openai "OpenAI"
           :host "api.openai.com"
           :models '("gpt-4o-mini" "gpt-4.1" "o4-mini")))
+
+  (setq gptel-gemini-backend
+        (gptel-make-gemini "Gemini"
+          :key #'gptel-api-key-from-auth-source
+          :stream t
+          :host "generativelanguage.googleapis.com"
+          :models '("gemini-2.5-flash")))
 
   (setq gptel-gemini-backend
         (gptel-make-gemini "Gemini"
@@ -1109,7 +1121,8 @@ The block below contains the *entire* .emacs. Tangle it to generate
 :END:
 #+BEGIN_SRC emacs-lisp
   ;; Allow local emacs variable to be set in the file
-  (setq enable-local-variables :all)
+  (setq enable-local-variables :all
+        enable-local-eval t)
 #+END_SRC
 
 ** Code completion
@@ -1432,7 +1445,11 @@ The block below contains the *entire* .emacs. Tangle it to generate
   (use-package gptel
     :ensure t
     :init)
+
+  (require 'gptel-org) ;; Ensure gptel-org module is loaded
+
   (setq gptel-default-mode 'org-mode)
+
 #+END_SRC
 **** OpenAI
 #+BEGIN_SRC emacs-lisp
@@ -1449,6 +1466,14 @@ The block below contains the *entire* .emacs. Tangle it to generate
           :stream t
           :host "generativelanguage.googleapis.com"
           :models '("gemini-2.5-flash")))
+#+END_SRC
+**** Mistral
+#+BEGIN_SRC emacs-lisp
+  (setq gptel-mistral-backend
+        (gptel-make-openai "Mistral"
+          :key #'gptel-api-key-from-auth-source
+          :host "api.mistral.ai"
+          :models '("mistral-medium" "mistral-large")))
 #+END_SRC
 **** Copilot
 #+BEGIN_SRC emacs-lisp
