@@ -1,0 +1,34 @@
+:PROPERTIES:
+:GPTEL_BACKEND: Gemini
+:GPTEL_MODEL: gemini-2.5-flash
+:GPTEL_SYSTEM: You are a large language model living in Emacs and a helpful assistant. Respond concisely. Always add a link to documentation.
+:END:
+
+* Pre requisite
+** Check configuration
+In order to check backend, type C-c C-c inside code below
+#+BEGIN_SRC emacs-lisp
+  (message "backend=%s model=%s system=%s"
+           (and (boundp 'gptel-backend) gptel-backend)
+           (and (boundp 'gptel-model) gptel-model)
+           (and (boundp 'gptel-directives) (alist-get 'default gptel-directives)))
+#+END_SRC
+
+** How to change/save configuration
+- run =M-x gptel-menu=
+- change config
+- move cursor to =PROPERTIES=
+- run =M-x gptel-org-set-properties=
+- run a test query to validate
+- save =C-x C-s=
+
+
+* Conversation
+
+***
+
+# Local Variables:
+# eval: (remove-hook 'before-save-hook 'org-make-toc)
+# eval: (gptel-mode 1)
+# eval: (toggle-truncate-lines)
+# End:

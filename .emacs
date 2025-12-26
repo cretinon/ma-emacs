@@ -298,7 +298,6 @@
 (use-package org-make-toc
   :ensure t
   :hook (org-mode . org-make-toc-mode)
-  ;;  :custom (org-make-toc-insert-custom-ids t)
   )
 (setq org-support-shift-select t)
 
@@ -315,7 +314,8 @@
 (add-to-list 'auto-mode-alist '("\\.[pP][dD][fF]\\'" . pdf-view-mode)) ;; Associate PDF files with pdf-view-mode
 
 ;; Allow local emacs variable to be set in the file
-(setq enable-local-variables :all)
+(setq enable-local-variables :all
+      enable-local-eval t)
 
 ;; General Emacs configuration for completion
 (use-package emacs
@@ -544,6 +544,9 @@
 (use-package gptel
   :ensure t
   :init)
+
+(require 'gptel-org) ;; Ensure gptel-org module is loaded
+
 (setq gptel-default-mode 'org-mode)
 
 (setq gptel-openai-backend
@@ -561,9 +564,11 @@
 (setq gptel-copilot-backend
       (gptel-make-gh-copilot "Copilot Chat"))
 
+
 (defun reload-init-file ()
   (interactive)
   (load-file user-init-file))
+
 (global-set-key (kbd "C-c C-l") 'reload-init-file)
 (global-set-key (kbd "C-c ;")   'comment-region)
 (global-set-key (kbd "C-c .")   'uncomment-region)
