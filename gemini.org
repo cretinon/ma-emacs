@@ -4,6 +4,15 @@
 :GPTEL_SYSTEM: You are a large language model living in Emacs and a helpful assistant. Respond concisely. Always add a link to documentation.
 :END:
 
+* About
+This file is used to :
+- Easily save LLM parameters
+- Check configuration
+- Have conversation with LLM
+  Open this file in emacs
+  start a new conversation (at the end of the file near ***)
+  =C-c RET= once ready to send request
+
 * Pre requisite
 ** Check configuration
 In order to check backend, type C-c C-c inside code below
