@@ -2,6 +2,7 @@
 :GPTEL_BACKEND: ChatGPT
 :GPTEL_MODEL: gpt-4o-mini
 :GPTEL_SYSTEM: You are a large language model living in Emacs and a helpful assistant. Respond concisely. Always add a link to documentation.
+:GPTEL_BOUNDS: ((response (1210 1234)))
 :END:
 
 * About
@@ -40,4 +41,5 @@ In order to check backend, type C-c C-c inside code below
 # eval: (remove-hook 'before-save-hook 'org-make-toc)
 # eval: (gptel-mode 1)
 # eval: (toggle-truncate-lines)
+# eval: (org-toggle-inline-images)
 # End:

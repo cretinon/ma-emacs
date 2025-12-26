@@ -313,6 +313,19 @@
     :hook (org-mode . org-pdftools-setup-link)))
 (add-to-list 'auto-mode-alist '("\\.[pP][dD][fF]\\'" . pdf-view-mode)) ;; Associate PDF files with pdf-view-mode
 
+;; PlantUML mode
+;; prerequisite is to have downloaded plantuml.jar at https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar
+(use-package plantuml-mode
+  :ensure t)  ; For syntax highlighting (optional)
+
+;; Enable Babel support
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((plantuml . t)))
+
+;; Set JAR path
+(setq org-plantuml-jar-path "~/plantuml/plantuml.jar")
+
 ;; Allow local emacs variable to be set in the file
 (setq enable-local-variables :all
       enable-local-eval t)

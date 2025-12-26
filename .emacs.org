@@ -39,6 +39,7 @@ read the commentary and evalate code *step by step* from Emacs.
     - [[#markdown-mode][Markdown mode]]
     - [[#org-mode][Org mode]]
     - [[#pdf-mode][PDF mode]]
+    - [[#plantuml-mode][PlantUML mode]]
     - [[#all-mode][All mode]]
   - [[#code-completion][Code completion]]
     - [[#general-emacs][General Emacs]]
@@ -385,6 +386,19 @@ The block below contains the *entire* .emacs. Tangle it to generate
       :hook (org-mode . org-pdftools-setup-link)))
   (add-to-list 'auto-mode-alist '("\\.[pP][dD][fF]\\'" . pdf-view-mode)) ;; Associate PDF files with pdf-view-mode
 
+  ;; PlantUML mode
+  ;; prerequisite is to have downloaded plantuml.jar at https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar
+  (use-package plantuml-mode
+    :ensure t)  ; For syntax highlighting (optional)
+
+  ;; Enable Babel support
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((plantuml . t)))
+
+  ;; Set JAR path
+  (setq org-plantuml-jar-path "~/plantuml/plantuml.jar")
+  
   ;; Allow local emacs variable to be set in the file
   (setq enable-local-variables :all
         enable-local-eval t)
@@ -1114,6 +1128,26 @@ The block below contains the *entire* .emacs. Tangle it to generate
        :hook (org-mode . org-pdftools-setup-link)))
    (add-to-list 'auto-mode-alist '("\\.[pP][dD][fF]\\'" . pdf-view-mode)) ;; Associate PDF files with pdf-view-mode
 #+END_SRC
+
+*** PlantUML mode
+#+begin_src elisp
+  ;; PlantUML mode
+  ;; prerequisite is to have downloaded plantuml.jar at https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar
+  (use-package plantuml-mode
+    :ensure t)  ; For syntax highlighting (optional)
+#+end_src
+
+#+begin_src elisp
+  ;; Enable Babel support
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((plantuml . t)))
+#+end_src
+
+#+begin_src elisp
+  ;; Set JAR path
+  (setq org-plantuml-jar-path "~/plantuml/plantuml.jar")
+ #+end_src
 
 *** All mode
 :PROPERTIES:
