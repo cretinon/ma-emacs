@@ -1,0 +1,53 @@
+# -*- mode: snippet -*-
+# name: process
+# key: _process
+# --
+
+#!/bin/bash
+
+# shellcheck source=/dev/null disable=SC2294,SC3043,SC3037
+
+_usage_$1 () {
+    echo -e ""
+}
+
+# snippet to install function
+$0
+
+_process_lib_$1 () {
+     _func_start "$@"
+
+    # Check arg
+    # N/A
+
+    # Load specific conf
+    if ! _load_conf "$MY_GIT_DIR/$1/conf/$1.conf"; then _error "something went wrong when loading $1 conf" ; _usage ; _func_end "1" ; return 1 ; fi
+
+    # Declare local var
+    local __return
+    local __my_var
+
+    # Set local var
+    __return="1"
+
+    # Do what need to be done
+    eval set -- "$@"
+
+    while true ; do
+        case "\$1" in
+            --my_option )     __my_var=\$2        ; shift ; shift         ;;
+            -- )                                   shift ; break         ;;
+            * )                                    shift                 ;;
+        esac
+    done
+
+    while true ; do
+        case "\$1" in
+            install )                           _install_$1 "" ; __return=$? ; break ;;
+            -- ) shift ;;
+            *)  _error "command $1 not found" ; __return=1 ; break ;;
+        esac
+    done
+
+    _func_end "$__return" ; return "$__return"
+}

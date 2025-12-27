@@ -14,6 +14,9 @@ _$1 () {
     #if ! _fileexist "\$1"; then _error "file $1 not found"; _func_end "$ERROR_ARGV" ; return $ERROR_ARGV ; fi
     #if ! _installed "my_super_bin" ; then _error "my_super_bin not found"; _func_end "$ERROR_ARGV" ; return $ERROR_ARGV ; fi
 
+    # Load specific conf
+    #if ! _load_conf "my.conf"; then _error "something went wrong when loading $1 conf" ; _usage ; _func_end "1" ; return 1 ; fi
+
     # Declare local var
     local __return
     local __result
