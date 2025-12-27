@@ -601,4 +601,7 @@
   :init
   (marginalia-mode))
 
+;; if needed https://github.com/cretinon/ma-cgr
+(ignore-errors (load "~/git/ma-cgr/ma-cgr.el"))
+
 (provide '.emacs)
