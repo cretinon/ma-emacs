@@ -328,6 +328,15 @@
  'org-babel-load-languages
  '((plantuml . t)))
 
+;; Reload images in org-mode when evaluating a block of code
+(defun my-org-reload-images-after-babel-execute ()
+  "Toggle inline images to force a refresh after evaluating an Org Babel block."
+  (when (eq major-mode 'org-mode)
+      (org-toggle-inline-images nil) ; Turn off
+      (org-toggle-inline-images t)))  ; Turn on
+
+(add-hook 'org-babel-after-execute-hook 'my-org-reload-images-after-babel-execute)
+
 ;; Set JAR path
 (setq org-plantuml-jar-path "~/plantuml/plantuml.jar")
 
