@@ -59,7 +59,7 @@
 (setq-default inhibit-splash-screen t) ;; Prevent the splash screen from appearing at startup
 (fset 'yes-or-no-p 'y-or-n-p) ;; Replace yes/no prompts with y/n for convenience
 
-;; Enable global whitespace mode with preferred styles (shwo special char)
+;; Enable global whitespace mode with preferred styles (show special char)
 (require 'whitespace)
 (setq-default whitespace-style '(face trailing tabs empty indentation::space))
 (global-whitespace-mode 1)
@@ -262,7 +262,12 @@
 ;; Enable features for better usability
 (save-place-mode 1)                     ;; Remember cursor position when closing files
 (global-auto-revert-mode 1)             ;; Refresh buffer if modified on disk
-(add-hook 'before-save-hook 'delete-trailing-whitespace) ;; Remove trailing whitespace before saving
+(add-hook 'before-save-hook             ;; Remove trailing whitespace before saving except for some mode
+          (lambda ()
+            (unless (or (derived-mode-p 'org-mode)
+                        (derived-mode-p 'markdown-mode)
+                        (derived-mode-p 'gfm-mode))
+              (delete-trailing-whitespace))))
 
 ;; JSON mode configuration
 (use-package json-mode
