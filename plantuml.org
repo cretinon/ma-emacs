@@ -396,7 +396,6 @@ foo -[#blue;#green,dashed,thickness=4]-> bar6  : [blue;green,dashed,4]
                   web02 [address = "      .2"]
                   db01 [address = "           .101", shape = database ]
                   db02 [address = "           .102"]
-
                   // define network using defined nodes
                   group db {
                           color = "#CCFFCC";
@@ -413,9 +412,9 @@ foo -[#blue;#green,dashed,thickness=4]-> bar6  : [blue;green,dashed,4]
 [[file:img/network.png]]
 
 * Theme
-We can apply global theme to diagrams
-Theme list : [[https://the-lum.github.io/puml-themes-gallery/themes/index.html][here]]
-Theme demo : [[https://plantuml.com/ru/theme-gallery][here]]
+We can apply global theme to diagrams    
+Theme list : [[https://the-lum.github.io/puml-themes-gallery/themes/index.html][here]]    
+Theme demo : [[https://plantuml.com/ru/theme-gallery][here]]    
 #+begin_src plantuml :results file :file img/element_theme.png :exports results
   @startuml
   title theme
