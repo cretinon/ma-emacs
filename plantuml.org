@@ -1,7 +1,7 @@
 * About
-Objective of this file is to have an offline reference of [[https://plantuml.com/en/deployment-diagram][PlantUML Deployment Diagram]] and [[https://plantuml.com/en/nwdiag][PlantUML Network Diagram]].
-Use =C-c C-c= inside block of code to see diagrams.
-Unleash Emacs power opening this file with your best editor. Online result avaliable [[https://github.com/cretinon/ma-emacs/blob/main/plantuml.org][here]]
+- Objective of this file is to have an offline reference of [[https://plantuml.com/en/deployment-diagram][PlantUML Deployment Diagram]] and [[https://plantuml.com/en/nwdiag][PlantUML Network Diagram]].
+- Use =C-c C-c= inside block of code to see diagrams.
+- Unleash Emacs power opening this file with your best editor. Online result avaliable [[https://github.com/cretinon/ma-emacs/blob/main/plantuml.org][here]]
 
 * TOC
 :PROPERTIES:
