@@ -1,4 +1,4 @@
-#+TITLE: .emacs — Configuration & explanation of my .emacs
+#+TITLE: README.org — Configuration & explanation of my .emacs
 #+AUTHOR: Jacques Cretinon
 #+DATE: <2025-12-21>
 #+PROPERTY: header-args:emacs-lisp :results output :exports both
