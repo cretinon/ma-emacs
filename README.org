@@ -51,11 +51,11 @@ read the commentary and evalate code *step by step* from Emacs.
   - [[#magit][Magit]]
   - [[#syntax-check][Syntax check]]
   - [[#llms][LLMs]]
-    - [[#common][Common]]
-      - [[#openai][OpenAI]]
-      - [[#gemini][Gemini]]
-      - [[#mistral][Mistral]]
-      - [[#copilot][Copilot]]
+    - [[#common-for-all][Common for all]]
+    - [[#openai][OpenAI]]
+    - [[#gemini][Gemini]]
+    - [[#mistral][Mistral]]
+    - [[#copilot][Copilot]]
   - [[#usefull-key-binding][Usefull Key Binding]]
   - [[#interactive-help][Interactive Help]]
 - [[#license][License]]
@@ -876,7 +876,7 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
 #+END_SRC
 
 ** LLMs
-*** Common
+*** Common for all
 #+BEGIN_SRC emacs-lisp
   ;; gptel
   (use-package gptel
@@ -888,14 +888,14 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
   (setq gptel-default-mode 'org-mode)
 
 #+END_SRC
-**** OpenAI
+*** OpenAI
 #+BEGIN_SRC emacs-lisp
   (setq gptel-openai-backend
       (gptel-make-openai "OpenAI"
         :host "api.openai.com"
         :models '("gpt-4o-mini" "gpt-4.1" "o4-mini")))
   #+END_SRC
-**** Gemini
+*** Gemini
 #+BEGIN_SRC emacs-lisp
   (setq gptel-gemini-backend
         (gptel-make-gemini "Gemini"
@@ -904,7 +904,7 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
           :host "generativelanguage.googleapis.com"
           :models '("gemini-2.5-flash")))
 #+END_SRC
-**** Mistral
+*** Mistral
 #+BEGIN_SRC emacs-lisp
   (setq gptel-mistral-backend
         (gptel-make-openai "Mistral"
@@ -912,7 +912,7 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
           :host "api.mistral.ai"
           :models '("mistral-medium" "mistral-large")))
 #+END_SRC
-**** Copilot
+*** Copilot
 #+BEGIN_SRC emacs-lisp
   (setq gptel-copilot-backend
         (gptel-make-gh-copilot "Copilot Chat"))
