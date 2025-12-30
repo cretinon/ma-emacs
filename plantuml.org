@@ -1,0 +1,529 @@
+* About
+Objective of this file is to have an offline reference of [[https://plantuml.com/en/deployment-diagram][PlantUML Deployment Diagram]] and [[https://plantuml.com/en/nwdiag][PlantUML Network Diagram]]. Use =C-c C-c= inside block of code to see diagrams
+
+* TOC
+:PROPERTIES:
+:TOC:      :include all :depth 4 :force (depth) :ignore (this) :local (depth)
+:END:
+:CONTENTS:
+- [[#about][About]]
+- [[#diagram-title-caption-header-footer-and-legend][Diagram title, caption, header, footer and legend]]
+- [[#deployment-diagram][Deployment Diagram]]
+  - [[#element-list][Element list]]
+    - [[#round][Round]]
+    - [[#color][Color]]
+    - [[#ports][Ports]]
+  - [[#links][Links]]
+    - [[#label-and-link][Label and link]]
+    - [[#arrow][Arrow]]
+    - [[#bracketed-arrow-thickness-and-color][Bracketed arrow, thickness and color]]
+- [[#network-diagram][Network Diagram]]
+  - [[#network-with-group-and-color][Network with group and color]]
+- [[#theme][Theme]]
+- [[#icons][Icons]]
+  - [[#icons-and-deployment][Icons and Deployment]]
+  - [[#icons-and-network][Icons and Network]]
+:END:
+
+* Diagram title, caption, header, footer and legend
+How to declare diagram properties :
+
+#+begin_src plantuml :results file :file img/diagram_properties.png :exports results
+@startuml
+
+header some header
+
+footer some footer
+
+title My title
+
+legend
+The legend
+end legend
+
+caption This is caption
+@enduml
+#+end_src
+
+#+RESULTS:
+[[file:img/diagram_properties.png]]
+
+* Deployment Diagram
+** Element list
+*** Round
+#+begin_src plantuml :results file :file img/element_round.png :exports results
+  title Element list
+  skinparam roundCorner 15
+  actor Alice
+  agent agent
+  artifact artifact
+  boundary boundary
+  card card
+  circle circle
+  cloud cloud
+  collections collections
+  component component
+  control control
+  database database
+  entity entity
+  file file
+  folder folder
+  frame frame
+  hexagon hexagon
+  interface interface
+  label label
+  node node
+  package package
+  person person
+  queue queue
+  rectangle rectangle
+  stack stack
+  storage storage
+  usecase usecase
+#+end_src
+
+#+RESULTS:
+[[file:img/element_round.png]]
+
+*** Color
+#+begin_src plantuml :results file :file img/element_color.png :exports results
+  @startuml
+  title Element color
+  <style>
+  actor {
+          BackGroundColor #f80c12
+          LineThickness 1
+          LineColor black
+  }
+  agent {
+          BackGroundColor #f80c12
+          LineThickness 1
+          LineColor black
+  }
+  artifact {
+          BackGroundColor #ee1100
+          LineThickness 1
+          LineColor black
+  }
+  boundary {
+          BackGroundColor #ee1100
+          LineThickness 1
+          LineColor black
+  }
+  card {
+          BackGroundColor #ff3311
+          LineThickness 1
+          LineColor black
+  }
+  circle {
+          BackGroundColor #ff3311
+          LineThickness 1
+          LineColor black
+  }
+  cloud {
+          BackGroundColor #ff4422
+          LineThickness 1
+          LineColor black
+  }
+  collections {
+          BackGroundColor #ff4422
+          LineThickness 1
+          LineColor black
+  }
+  component {
+          BackGroundColor #ff6644
+          LineThickness 1
+          LineColor black
+  }
+  control {
+          BackGroundColor #ff6644
+          LineThickness 1
+          LineColor black
+  }
+  database {
+          BackGroundColor #ff9933
+          LineThickness 1
+          LineColor black
+  }
+  entity {
+          BackGroundColor #feae2d
+          LineThickness 1
+          LineColor black
+  }
+  file {
+          BackGroundColor #feae2d
+          LineThickness 1
+          LineColor black
+  }
+  folder {
+          BackGroundColor #ccbb33
+          LineThickness 1
+          LineColor black
+  }
+  frame {
+          BackGroundColor #d0c310
+          LineThickness 1
+          LineColor black
+  }
+  hexagon {
+          BackGroundColor #aacc22
+          LineThickness 1
+          LineColor black
+  }
+  interface {
+          BackGroundColor #69d025
+          LineThickness 1
+          LineColor black
+  }
+  label {
+          BackGroundColor black
+          LineThickness 1
+          LineColor black
+  }
+  node {
+          BackGroundColor #22ccaa
+          LineThickness 1
+          LineColor black
+  }
+  package {
+          BackGroundColor #12bdb9
+          LineThickness 1
+          LineColor black
+  }
+  person {
+          BackGroundColor #11aabb
+          LineThickness 1
+          LineColor black
+  }
+  queue {
+          BackGroundColor #11aabb
+          LineThickness 1
+          LineColor black
+  }
+  rectangle {
+          BackGroundColor #4444dd
+          LineThickness 1
+          LineColor black
+  }
+  stack {
+          BackGroundColor #3311bb
+          LineThickness 1
+          LineColor black
+  }
+  storage {
+          BackGroundColor #3b0cbd
+          LineThickness 1
+          LineColor black
+  }
+  usecase {
+          BackGroundColor #442299
+          LineThickness 1
+          LineColor black
+  }
+  </style>
+  actor Alice
+  actor/ "actor/"
+  agent agent #aliceblue;line:blue;line.dotted;text:blue
+  artifact artifact
+  boundary boundary
+  card card
+  circle circle
+  cloud cloud
+  collections collections
+  component component
+  control control
+  database database
+  entity entity
+  file file
+  folder folder
+  frame frame
+  hexagon hexagon
+  interface interface
+  label label
+  node node
+  package package
+  person person
+  queue queue
+  rectangle rectangle
+  stack stack
+  storage storage
+  usecase usecase
+  usecase/ "usecase/"
+  agent a
+  cloud c #pink;line:red;line.bold;text:red [
+  c
+  cloud description
+  ]
+  file  f #palegreen;line:green;line.dashed;text:green {
+          component c1
+          component c2
+  }
+  frame frame {
+          node  n #aliceblue;line:blue;line.dotted;text:blue
+  }
+  @enduml
+#+end_src
+
+#+RESULTS:
+[[file:img/element_color.png]]
+
+*** Ports
+#+begin_src plantuml :results file :file img/port.png :exports results
+  @startuml
+  title Ports
+  [i]
+  node node {
+          portin p1
+          portin p2
+          portin p3
+          portout po1
+          portout po2
+          portout po3
+          file f1
+  }
+  [o]
+
+  i --> p1
+  i --> p2
+  i --> p3
+  p1 --> f1
+  p2 --> f1
+  po1 --> o
+  po2 --> o
+  po3 --> o
+  f1 --> po1
+
+  @enduml
+#+end_src
+
+#+RESULTS:
+[[file:img/port.png]]
+
+** Links
+*** Label and link
+#+begin_src plantuml :results file :file img/link.png :exports results
+@startuml
+title Label and link
+node node1
+node node2
+node node3
+node node4
+node node5
+node1 -- node2 : label1
+node1 .. node3 : label2
+node1 ~~ node4 : label3
+node1 == node5
+
+@enduml
+#+end_src
+
+#+RESULTS:
+[[file:img/link.png]]
+
+*** Arrow
+#+begin_src plantuml :results file :file img/arrow.png :exports results
+@startuml
+title Arrow
+artifact artifact1
+artifact artifact2
+artifact artifact3
+artifact artifact4
+artifact artifact5
+artifact artifact6
+artifact artifact7
+artifact artifact8
+artifact artifact9
+artifact artifact10
+artifact1 --> artifact2
+artifact1 --* artifact3
+artifact1 --o artifact4
+artifact1 --+ artifact5
+artifact1 --# artifact6
+artifact1 -->> artifact7
+artifact1 --0 artifact8
+artifact1 --^ artifact9
+artifact1 --(0 artifact10
+
+@enduml
+#+end_src
+
+#+RESULTS:
+[[file:img/arrow.png]]
+
+*** Bracketed arrow, thickness and color
+#+begin_src plantuml :results file :file img/bracketed_arrow.png :exports results
+@startuml
+title Bracketed line style mix
+node foo
+foo --> bar                             : ∅
+foo -[#red,thickness=1]-> bar1          : [#red,1]
+foo -[#red,dashed,thickness=2]-> bar2   : [#red,dashed,2]
+foo -[#green,dashed,thickness=4]-> bar3 : [#green,dashed,4]
+foo -[#blue,dotted,thickness=8]-> bar4  : [blue,dotted,8]
+foo -[#blue,plain,thickness=16]-> bar5  : [blue,plain,16]
+foo -[#blue;#green,dashed,thickness=4]-> bar6  : [blue;green,dashed,4]
+@enduml
+#+end_src
+
+#+RESULTS:
+[[file:img/bracketed_arrow.png]]
+
+* Network Diagram
+** Network with group and color
+#+begin_src plantuml :results file :file img/network.png :exports results
+  @startuml
+  title Network
+  nwdiag {
+          inet [shape = cloud];
+          inet -- router;
+          network Sample_front {
+                  address = "192.168.10.0/24"
+                  color = "red"
+
+                  // define group
+                  group web {
+                          web01 [address = " .1, .2", shape = "node"]
+                          web02 [address = " .2, .3"]
+                  }
+                  router
+          }
+          network Sample_back {
+                  address = "192.168.20.0/24"
+                  color = "palegreen"
+                  web01 [address = "      .1"]
+                  web02 [address = "      .2"]
+                  db01 [address = "           .101", shape = database ]
+                  db02 [address = "           .102"]
+
+                  // define network using defined nodes
+                  group db {
+                          color = "#CCFFCC";
+                          description = "Long group description";
+                          db01;
+                          db02;
+                  }
+          }
+  }
+  @enduml
+#+end_src
+
+#+RESULTS:
+[[file:img/network.png]]
+
+* Theme
+We can apply global theme to diagrams
+Theme list : [[https://the-lum.github.io/puml-themes-gallery/themes/index.html][here]]
+Theme demo : [[https://plantuml.com/ru/theme-gallery][here]]
+#+begin_src plantuml :results file :file img/element_theme.png :exports results
+  @startuml
+  title theme
+  !theme toy
+  skinparam roundCorner 15
+  actor Alice
+  actor/ "actor/"
+  agent agent
+  artifact artifact
+  boundary boundary
+  card card
+  circle circle
+  cloud cloud
+  collections collections
+  component component
+  control control
+  database database
+  entity entity
+  file file
+  folder folder
+  frame frame
+  hexagon hexagon
+  interface interface
+  label label
+  node node
+  package package
+  person person
+  queue queue
+  rectangle rectangle
+  stack stack
+  storage storage
+  usecase usecase
+  @enduml
+#+end_src
+
+#+RESULTS:
+[[file:img/element_theme.png]]
+
+* Icons
+See [[https://plantuml.com/en/stdlib][stdlib doc]] for icon libraries and complete list of Office's icons [[https://github.com/Roemer/plantuml-office][here]]
+
+** Icons and Deployment
+#+begin_src plantuml :results file :file img/icons.png :exports results
+@startuml
+!include <tupadr3/common>
+
+!define ICONURL https://raw.githubusercontent.com/Roemer/plantuml-office/master/office2014
+!includeurl ICONURL/Servers/database_server.puml
+!includeurl ICONURL/Servers/application_server.puml
+!includeurl ICONURL/Concepts/firewall_orange.puml
+!includeurl ICONURL/Clouds/cloud_disaster_red.puml
+
+title Office Icons Example
+
+package "Sprites" {
+    OFF_DATABASE_SERVER(db,DB)
+    OFF_APPLICATION_SERVER(app,App-Server)
+    OFF_FIREWALL_ORANGE(fw,Firewall)
+    OFF_CLOUD_DISASTER_RED(cloud,Cloud)
+    db <-> app
+    app <--> fw
+    fw <.left.> cloud
+}
+
+package "Images" {
+    rectangle "<img:https://raw.githubusercontent.com/Roemer/plantuml-office/master/office2014/Servers/database_server.png>\r DB" as db2
+    rectangle "<img:https://raw.githubusercontent.com/Roemer/plantuml-office/master/office2014/Servers/application_server.png>\r App-Server" as app2
+    rectangle "<img:https://raw.githubusercontent.com/Roemer/plantuml-office/master/office2014/Concepts/firewall_orange.png>\r Firewall" as fw2
+    rectangle "<img:https://raw.githubusercontent.com/Roemer/plantuml-office/master/office2014/Clouds/cloud_disaster_red.png>\r Cloud" as cloud2
+    db2 <-> app2
+    app2 <--> fw2
+    fw2 <.left.> cloud2
+}
+
+@enduml
+#+end_src
+
+#+RESULTS:
+[[file:img/icons.png]]
+
+** Icons and Network
+#+begin_src plantuml :results file :file img/network_icons.png :exports results
+@startuml
+!include <office/Servers/application_server>
+!include <office/Servers/database_server>
+
+nwdiag {
+  network dmz {
+      address = "210.x.x.x/24"
+
+      // set multiple addresses (using comma)
+      web01 [address = "210.x.x.1, 210.x.x.20",  description = "<$application_server>\n web01"]
+      web02 [address = "210.x.x.2",  description = "<$application_server>\n web02"];
+  }
+  network internal {
+      address = "172.x.x.x/24";
+
+      web01 [address = "172.x.x.1"];
+      web02 [address = "172.x.x.2"];
+      db01 [address = "172.x.x.100",  description = "<$database_server>\n db01"];
+      db02 [address = "172.x.x.101",  description = "<$database_server>\n db02"];
+  }
+}
+@enduml
+#+end_src
+
+#+RESULTS:
+[[file:img/network_icons.png]]
+
+# Local Variables:
+# eval: (toggle-truncate-lines)
+# eval: (org-toggle-inline-images)
+# End:
