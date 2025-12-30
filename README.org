@@ -594,11 +594,11 @@ read the commentary and evalate code *step by step* from Emacs.
 :PROPERTIES:
 :CUSTOM_ID: vertico
 :END:
-- **Purpose**: Vertico is a vertical completion interface that aims to enhance the completion experience in Emacs. It provides a simple and efficient way to display completion candidates in a vertical list.
-- **Functionality**:
+- *Purpose*: Vertico is a vertical completion interface that aims to enhance the completion experience in Emacs. It provides a simple and efficient way to display completion candidates in a vertical list.
+- *Functionality*:
   - Displays completions vertically, making it easy to see multiple options at once without obscuring the text.
   - Supports standard Emacs completion functions and works seamlessly with other completion frameworks.
-- **Usage**: It integrates with Emacs's built-in completion system and is typically used when entering commands, filenames, or any other text that requires completion.
+- *Usage*: It integrates with Emacs's built-in completion system and is typically used when entering commands, filenames, or any other text that requires completion.
 
 #+BEGIN_SRC emacs-lisp
   ;; Vertical interactive completion using vertico
@@ -612,11 +612,11 @@ read the commentary and evalate code *step by step* from Emacs.
 :PROPERTIES:
 :CUSTOM_ID: corfu
 :END:
-- **Purpose**: Corfu is a pop-up completion framework that provides in-buffer completion functionality. It aims to improve the way completions are presented while typing.
-- **Functionality**:
+- *Purpose*: Corfu is a pop-up completion framework that provides in-buffer completion functionality. It aims to improve the way completions are presented while typing.
+- *Functionality*:
   - Displays a pop-up menu of candidates while typing, either as you type or after you hit a specific command.
   - Offers features like cycling through candidates, auto-completion, and various configurability options (e.g., auto-preselecting and previewing completions).
-- **Usage**: Corfu is particularly useful for providing immediate feedback as you type, enhancing the interactive experience for users of programming modes or text editing.
+- *Usage*: Corfu is particularly useful for providing immediate feedback as you type, enhancing the interactive experience for users of programming modes or text editing.
 
 #+BEGIN_SRC emacs-lisp
   ;; Pop-up completion using corfu
@@ -655,11 +655,11 @@ read the commentary and evalate code *step by step* from Emacs.
 :PROPERTIES:
 :CUSTOM_ID: dabbrev
 :END:
-- **Purpose**: Dabbrev is a built-in Emacs package designed for “dynamic abbreviation expansion.” It aims to facilitate fast and flexible word completion based on what you've previously typed in your current buffer or other buffers.
-- **Functionality**:
+- *Purpose*: Dabbrev is a built-in Emacs package designed for “dynamic abbreviation expansion.” It aims to facilitate fast and flexible word completion based on what you've previously typed in your current buffer or other buffers.
+- *Functionality*:
   - Searches for words and phrases in all open buffers to provide completion options based on your current input.
   - Offers configurations for case sensitivity and can check multiple buffers to find relevant candidates.
-- **Usage**: Dabbrev is often used by typing a portion of a word and invoking completion to fill in the rest, speeding up text editing and coding.
+- *Usage*: Dabbrev is often used by typing a portion of a word and invoking completion to fill in the rest, speeding up text editing and coding.
 
 #+BEGIN_SRC emacs-lisp
   ;; Dabbrev configuration for buffer completion
@@ -677,11 +677,11 @@ read the commentary and evalate code *step by step* from Emacs.
 :PROPERTIES:
 :CUSTOM_ID: cape
 :END:
-- **Purpose**: Cape (Completion At Point Extensions) is a library designed to extend Emacs's completion capabilities. It provides various completion backends and offers an easy way to integrate multiple completion sources.
-- **Functionality**:
+- *Purpose*: Cape (Completion At Point Extensions) is a library designed to extend Emacs's completion capabilities. It provides various completion backends and offers an easy way to integrate multiple completion sources.
+- *Functionality*:
   - Works with and enhances existing completion frameworks like Vertico and Corfu.
   - Offers integrations for features like dictionary completion, snippet expansion, and specialized completion behaviors based on context (e.g., completing within comments or strings).
-- **Usage**: Cape is useful in setups where multiple completion sources need to be integrated, helping to tailor the completion behavior to specific coding environments and workflows.
+- *Usage*: Cape is useful in setups where multiple completion sources need to be integrated, helping to tailor the completion behavior to specific coding environments and workflows.
 
 #+BEGIN_SRC emacs-lisp
   ;; Autocompletion features using cape
@@ -705,7 +705,7 @@ read the commentary and evalate code *step by step* from Emacs.
 :PROPERTIES:
 :CUSTOM_ID: consult
 :END:
-- **Purpose**: Provides search and navigation commands
+- *Purpose*: Provides search and navigation commands
 
 #+BEGIN_SRC emacs-lisp
   (use-package consult
