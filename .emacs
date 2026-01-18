@@ -59,6 +59,36 @@
 (setq-default inhibit-splash-screen t) ;; Prevent the splash screen from appearing at startup
 (fset 'yes-or-no-p 'y-or-n-p) ;; Replace yes/no prompts with y/n for convenience
 
+;; rezise both text and status bar when CTRL + mouse wheel
+(setq frame-inhibit-implied-resize t)
+
+(defun my/global-zoom (delta)
+  "Adjust the font size globally without resizing the OS window."
+  (interactive)
+  (let* ((old-default-height (face-attribute 'default :height))
+         (new-default-height (+ old-default-height delta))
+         (old-ml-height (face-attribute 'mode-line :height))
+         (base-ml-height (if (numberp old-ml-height) old-ml-height 100))
+         (new-ml-height (+ base-ml-height delta))
+         (new-pad (max 1 (/ new-ml-height 40))))
+
+    ;; 1. Update the main font globally
+    (set-face-attribute 'default nil :height new-default-height)
+
+    ;; 2. Update the Mode Line
+    (dolist (face '(mode-line mode-line-inactive))
+      (set-face-attribute face nil
+                          :height new-ml-height
+                          :box `(:line-width ,new-pad :color ,(face-background 'mode-line))))
+
+    (message "Font: %s | Mode-Line: %s" new-default-height new-ml-height)))
+
+(defun my/global-zoom-in () (interactive) (my/global-zoom 10))
+(defun my/global-zoom-out () (interactive) (my/global-zoom -10))
+
+(global-set-key (kbd "<C-wheel-up>") 'my/global-zoom-in)
+(global-set-key (kbd "<C-wheel-down>") 'my/global-zoom-out)
+
 ;; Enable global whitespace mode with preferred styles (show special char)
 (require 'whitespace)
 (setq-default whitespace-style '(face trailing tabs empty indentation::space))
