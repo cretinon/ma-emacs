@@ -119,7 +119,7 @@
 (use-package neotree
   :ensure t
   :bind ("<f5>" . neotree-toggle)  ;; Bind F5 for toggling NeoTree
-  :hook (emacs-startup . neotree)  ;; Open NeoTree on startup
+;;  :hook (emacs-startup . neotree)  ;; Open NeoTree on startup
   :custom
   (neo-theme 'icons)                ;; Use icon theme for NeoTree
   (neo-smart-open t)                ;; Smart open behavior
