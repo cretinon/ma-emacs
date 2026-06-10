@@ -311,6 +311,12 @@
   :init)
 (add-to-list 'auto-mode-alist '("\\.yaml\\'" . yaml-mode)) ;; Associate .yaml files with yaml-mode
 
+;; GO mode configuration
+(use-package go-mode
+  :ensure t
+  :init)
+(add-to-list 'auto-mode-alist '("\\.go\\'" . go-mode)) ;; Associate .yaml files with yaml-mode
+
 ;; CSV mode configuration
 (use-package csv-mode
   :ensure t
