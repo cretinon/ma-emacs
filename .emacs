@@ -622,7 +622,7 @@
         :key #'gptel-api-key-from-auth-source
         :stream t
         :host "generativelanguage.googleapis.com"
-        :models '("gemini-2.5-flash")))
+        :models '("gemini-3.5-flash")))
 
 (setq gptel-copilot-backend
       (gptel-make-gh-copilot "Copilot Chat"))
