@@ -634,6 +634,104 @@
         :host "api.mistral.ai"
         :models '("mistral-medium" "mistral-large")))
 
+;; (defun my/gptel-review-code ()
+;;   "Review selected code or current buffer with Gemini in a split window."
+;;   (interactive)
+;;   (let* ((code (if (use-region-p)
+;;                    (buffer-substring-no-properties (region-beginning) (region-end))
+;;                  (buffer-substring-no-properties (point-min) (point-max))))
+;;          (prompt (concat "Perform a strict code review of this code. "
+;;                          "Identify bugs, security issues, performance bottlenecks, "
+;;                          "and suggest improvements with code examples:\n\n"
+;;                          code))
+;;          (review-buf (get-buffer-create "*Gemini Code Review*")))
+
+;;     ;; Display the review buffer in a side window on the right
+;;     (display-buffer-in-side-window review-buf '((side . right) (window-width . 80)))
+
+;;     (with-current-buffer review-buf
+;;       (read-only-mode -1)
+;;       (erase-buffer)
+;;       (markdown-mode)
+;;       (insert "# Code Review Output\n\n*Analyzing...*\n"))
+
+;;     ;; Request the review asynchronously
+;;     (gptel-request
+;;      prompt
+;;      :callback (lambda (response info)
+;;                  (cond
+;;                   ((and response (stringp response))
+;;                    (with-current-buffer review-buf
+;;                      (erase-buffer)
+;;                      (insert response)
+;;                      (markdown-mode)))
+;;                   ((plist-get info :error)
+;;                    (message "Review failed: %s" (plist-get info :error))))))))
+
+
+(defun my/gptel-review-code ()
+  "Review selected code or current buffer in a split window.
+Prompts for the AI backend and model to use."
+  (interactive)
+  (let* (;; Use backquote (`) so we can evaluate variables with comma (,)
+         (choices `(("OpenAI (gpt-4o-mini)" . (,gptel-openai-backend . "gpt-4o-mini"))
+                    ("OpenAI (o4-mini)" . (,gptel-openai-backend . "o4-mini"))
+                    ("Gemini (gemini-3.5-flash)" . (,gptel-gemini-backend . "gemini-3.5-flash"))
+                    ("Mistral (mistral-medium)" . (,gptel-mistral-backend . "mistral-medium"))
+                    ("Mistral (mistral-large)" . (,gptel-mistral-backend . "mistral-large"))
+                    ("Copilot Chat" . (,gptel-copilot-backend . nil))))
+         (selected-key (completing-read "Select AI Backend: " choices nil t))
+         (selected-val (cdr (assoc selected-key choices)))
+         (backend (car selected-val))
+         (model (cdr selected-val))
+         (code (if (use-region-p)
+                   (buffer-substring-no-properties (region-beginning) (region-end))
+                 (buffer-substring-no-properties (point-min) (point-max))))
+
+         ;; Updated prompt to request a Table of Contents
+         (prompt (concat "Perform a strict code review of the following code.\n\n"
+                         "CRITICAL REQUIREMENTS:\n"
+                         "1. You must format your entire response using Org-mode syntax.\n"
+                         "2. Start your response with a 'Table of Contents' section listing "
+                         "all the main headings of your review as a clean Org-mode list.\n"
+                         "3. Make a separate review for each function, identifying bugs, security issues, "
+                         "and performance bottlenecks.\n"
+                         "4. Provide a code example in order to correct each bug"
+                         "5. All code snippets and code examples must be wrapped "
+                         "in '#+BEGIN_SRC <language>' and '#+END_SRC' blocks.\n\n"
+                         "Code to review:\n"
+                         code))
+
+
+         (review-buf (get-buffer-create "*AI Code Review/")))
+
+    ;; Display the review buffer in a side window on the right
+    (display-buffer-in-side-window review-buf '((side . right) (window-width . 80)))
+
+    (with-current-buffer review-buf
+      (read-only-mode -1)
+      (erase-buffer)
+      (org-mode)
+      (insert (format "/ Code Review Output (%s)\n\n/Analyzing.../\n" selected-key)))
+
+
+    ;; Dynamically bind gptel-backend and gptel-model for the request
+    (let ((gptel-backend backend)
+          (gptel-model model))
+      (gptel-request
+       prompt
+       :callback (lambda (response info)
+                   (cond
+                    ((and response (stringp response))
+                     (with-current-buffer review-buf
+                       (erase-buffer)
+                       (insert (format "# Code Review Output (%s)\n\n" selected-key))
+                       (insert response)
+                       (org-mode)))
+                    ((plist-get info :error)
+                     (message "Review failed: %s" (plist-get info :error)))))))))
+
+
 (defun reload-init-file ()
   (interactive)
   (load-file user-init-file))
