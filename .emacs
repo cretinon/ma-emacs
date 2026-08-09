@@ -610,7 +610,10 @@
 
 (require 'gptel-org) ;; Ensure gptel-org module is loaded
 
-(setq gptel-default-mode 'org-mode)
+(setq gptel-default-mode 'org-mode
+      gptel-prompt-prefix-alist '((markdown-mode . "# ") (org-mode . "* ") (text-mode . "🤖: "))
+      gptel-response-prefix-alist '((markdown-mode . "# ") (org-mode . "** ") (text-mode . "🤖: "))
+      )
 
 (setq gptel-openai-backend
       (gptel-make-openai "OpenAI"
@@ -632,42 +635,19 @@
       (gptel-make-openai "Mistral"
         :key #'gptel-api-key-from-auth-source
         :host "api.mistral.ai"
-        :models '("mistral-medium" "mistral-large")))
+        :models '("mistral-large-latest")))
 
-;; (defun my/gptel-review-code ()
-;;   "Review selected code or current buffer with Gemini in a split window."
-;;   (interactive)
-;;   (let* ((code (if (use-region-p)
-;;                    (buffer-substring-no-properties (region-beginning) (region-end))
-;;                  (buffer-substring-no-properties (point-min) (point-max))))
-;;          (prompt (concat "Perform a strict code review of this code. "
-;;                          "Identify bugs, security issues, performance bottlenecks, "
-;;                          "and suggest improvements with code examples:\n\n"
-;;                          code))
-;;          (review-buf (get-buffer-create "*Gemini Code Review*")))
-
-;;     ;; Display the review buffer in a side window on the right
-;;     (display-buffer-in-side-window review-buf '((side . right) (window-width . 80)))
-
-;;     (with-current-buffer review-buf
-;;       (read-only-mode -1)
-;;       (erase-buffer)
-;;       (markdown-mode)
-;;       (insert "# Code Review Output\n\n*Analyzing...*\n"))
-
-;;     ;; Request the review asynchronously
-;;     (gptel-request
-;;      prompt
-;;      :callback (lambda (response info)
-;;                  (cond
-;;                   ((and response (stringp response))
-;;                    (with-current-buffer review-buf
-;;                      (erase-buffer)
-;;                      (insert response)
-;;                      (markdown-mode)))
-;;                   ((plist-get info :error)
-;;                    (message "Review failed: %s" (plist-get info :error))))))))
-
+(defun my/gptel-with-backend-selection ()
+  "Start gptel-mode after prompting for backend selection."
+  (interactive)
+  (let* ((choices `(("OpenAI" . ,gptel-openai-backend)
+                    ("Gemini" . ,gptel-gemini-backend)
+                    ("Mistral" . ,gptel-mistral-backend)
+                    ("Copilot" . ,gptel-copilot-backend)))
+         (backend (cdr (assoc (completing-read "Select AI Backend: " choices nil t)
+                              choices))))
+    (setq-local gptel-backend backend)
+    (gptel-mode 1)))
 
 (defun my/gptel-review-code ()
   "Review selected code or current buffer in a split window.
@@ -677,8 +657,7 @@ Prompts for the AI backend and model to use."
          (choices `(("OpenAI (gpt-4o-mini)" . (,gptel-openai-backend . "gpt-4o-mini"))
                     ("OpenAI (o4-mini)" . (,gptel-openai-backend . "o4-mini"))
                     ("Gemini (gemini-3.5-flash)" . (,gptel-gemini-backend . "gemini-3.5-flash"))
-                    ("Mistral (mistral-medium)" . (,gptel-mistral-backend . "mistral-medium"))
-                    ("Mistral (mistral-large)" . (,gptel-mistral-backend . "mistral-large"))
+                    ("Mistral (mistral-large-latest)" . (,gptel-mistral-backend . "mistral-large-latest"))
                     ("Copilot Chat" . (,gptel-copilot-backend . nil))))
          (selected-key (completing-read "Select AI Backend: " choices nil t))
          (selected-val (cdr (assoc selected-key choices)))
@@ -731,6 +710,12 @@ Prompts for the AI backend and model to use."
                     ((plist-get info :error)
                      (message "Review failed: %s" (plist-get info :error)))))))))
 
+(with-eval-after-load 'gptel
+  (setq gptel-directives
+        '((default . "You are a large language model living in Emacs and a helpful assistant. Respond concisely. Always answer in English even if I ask questions in French. If sources for answers are more than one year old, always warn me with this text 'WARNING OLD SOURCES' at the beginning of the answer. When providing a bash shell script, always split script into smart functions and add an additional BATS script in order to test functions. Always add at least one link to documentation referring to your answer.")))
+    ;; Force buffer-local behavior
+  (setq-local gptel-directives gptel-directives)
+  )
 
 (defun reload-init-file ()
   (interactive)
