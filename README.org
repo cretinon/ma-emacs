@@ -636,17 +636,22 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: markdown-mode
 :END:
-- *Purpose*: Provides full support for Markdown document editing.
+- *Purpose*: Provides full support for Markdown document editing and enhanced visual rendering.
 - *Functionality*:
-  - Integrates syntax highlighting, TOC generation, and markdown compilation.
+  - Enables native syntax highlighting in fenced code blocks and hides markup symbols.
+  - Associates `.md` files with `gfm-mode` and scales header fonts visually.
 - *Usage*: Opens automatically on `.md` files; press `C-c C-e` to execute markdown commands.
 
 #+BEGIN_SRC emacs-lisp
   ;; Markdown mode configuration
   (use-package markdown-mode
     :ensure t
-    :mode ("README\\.md\\'" . gfm-mode)  ;; Associate README.md with gfm-mode
-    :init (setq markdown-command "multimarkdown") ;; Set the markdown command
+    :mode ("\\.md\\'" . gfm-mode)  ;; Associate all .md files with gfm-mode
+    :init
+    (setq markdown-command "multimarkdown"
+          markdown-fontify-code-blocks-natively t  ;; Syntax highlight fenced code blocks
+          markdown-hide-markup t                   ;; Hide **bold**, *italic*, and `code` markup tags
+          markdown-header-scaling t)               ;; Visually scale header font sizes
     :bind (:map markdown-mode-map
                 ("C-c C-e" . markdown-do))) ;; Keybinding for markdown-do
 #+END_SRC

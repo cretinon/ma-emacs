@@ -328,8 +328,12 @@
 ;; Markdown mode configuration
 (use-package markdown-mode
   :ensure t
-  :mode ("README\\.md\\'" . gfm-mode)  ;; Associate README.md with gfm-mode
-  :init (setq markdown-command "multimarkdown") ;; Set the markdown command
+  :mode ("\\.md\\'" . gfm-mode)  ;; Associate all .md files with gfm-mode
+  :init
+  (setq markdown-command "multimarkdown"
+        markdown-fontify-code-blocks-natively t  ;; Syntax highlight fenced code blocks
+        markdown-hide-markup t                   ;; Hide **bold**, *italic*, and `code` markup tags
+        markdown-header-scaling t)               ;; Visually scale header font sizes
   :bind (:map markdown-mode-map
               ("C-c C-e" . markdown-do))) ;; Keybinding for markdown-do
 
