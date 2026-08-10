@@ -35,6 +35,7 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
     - [[#special-features][Special features]]
     - [[#json-mode][Json mode]]
     - [[#yaml-mode][Yaml mode]]
+    - [[#go-mode][Go mode]]
     - [[#csv-mode][Csv mode]]
     - [[#markdown-mode][Markdown mode]]
     - [[#org-mode][Org mode]]
@@ -55,8 +56,10 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
     - [[#common-for-all][Common for all]]
     - [[#openai][OpenAI]]
     - [[#gemini][Gemini]]
-    - [[#mistral][Mistral]]
     - [[#copilot][Copilot]]
+    - [[#mistral][Mistral]]
+    - [[#custom-helpers--configuration][Custom Helpers & Configuration]]
+  - [[#editor-code-assistant][Editor Code Assistant]]
   - [[#usefull-key-binding][Usefull Key Binding]]
   - [[#interactive-help][Interactive Help]]
 - [[#license][License]]
@@ -74,6 +77,12 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: pre-requisite
 :END:
+- *Purpose*: Prepares Emacs's package manager and ensures `use-package` is installed.
+- *Functionality*:
+  - Sets up stable and unstable package archive repositories (ELPA, MELPA).
+  - Installs `use-package` on first startup if missing.
+- *Usage*: Automatically executed on Emacs initialization to bootstrap the package management system.
+
 #+BEGIN_SRC emacs-lisp
   ;;Overall, this code configures the package management system and ensures `use-package` is available for further configurations.
   (require 'package)
@@ -99,18 +108,28 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: debug-use-package
 :END:
+- *Purpose*: Enables debugging features for package initialization and usage.
+- *Functionality*:
+  - Allows setting entry breakpoints for package initializers to trace loading issues.
+- *Usage*: Commented out by default; uncomment to debug load issues with package management.
+
 #+BEGIN_SRC emacs-lisp
   ;; if we need to call debbuger on specific call
-  (debug-on-entry 'package-initialize)
+  ;;(debug-on-entry 'package-initialize)
 #+END_SRC
 
 *** Refresh packages
 :PROPERTIES:
 :CUSTOM_ID: refresh-packages
 :END:
+- *Purpose*: Forces a refresh of the local package repository metadata.
+- *Functionality*:
+  - Downloads the latest lists of packages from configured archives.
+- *Usage*: Commented out by default; uncomment to manually update available packages list.
+
 #+BEGIN_SRC emacs-lisp
     ;; if we need to refresh melpa pkg list
-  (package-refresh-contents)
+  ;;(package-refresh-contents)
 #+END_SRC
 
 ** Custom configuration
@@ -121,6 +140,12 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: we-need-to-save-some-custom-conf
 :END:
+- *Purpose*: Sets up and loads a dedicated file for Emacs interactive customization settings.
+- *Functionality*:
+  - Redirects interactive `customize` saves to `~/.emacs.custom` to keep `.emacs` clean.
+  - Loads the custom file automatically on startup.
+- *Usage*: Used by Emacs to persist changes made through graphical customize buffers.
+
 #+BEGIN_SRC emacs-lisp
   ;; Load and activate the Cyberpunk theme
   (setq custom-file "~/.emacs.custom")
@@ -135,6 +160,11 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: theme-configuration
 :END:
+- *Purpose*: Installs and activates the visual theme for Emacs.
+- *Functionality*:
+  - Installs and loads the Cyberpunk theme.
+- *Usage*: Runs on startup to provide a modern, dark high-contrast interface.
+
 #+BEGIN_SRC emacs-lisp
   ;; Load and activate the Cyberpunk theme
   (use-package cyberpunk-theme
@@ -147,6 +177,12 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: ui-tweaks
 :END:
+- *Purpose*: Disables unused GUI elements and simplifies standard prompts.
+- *Functionality*:
+  - Hides toolbars and scrollbars while enabling tab-line and menu-bar.
+  - Maps yes/no prompts to single-character y/n.
+- *Usage*: Improves visual focus and streamlines user confirmation inputs.
+
 #+BEGIN_SRC emacs-lisp
   ;; Disable unnecessary UI elements
   (tool-bar-mode -1)   ;; Disable the tool bar
@@ -159,6 +195,11 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 #+END_SRC
 
 *** Resize mode-line
+- *Purpose*: Implements global font and mode-line zooming.
+- *Functionality*:
+  - Defines keys and functions to scale default font and status bar heights.
+- *Usage*: Press `C-wheel-up` to zoom in and `C-wheel-down` to zoom out globally.
+
 #+BEGIN_SRC emacs-lisp
 ;; rezise both text and status bar when CTRL + mouse wheel
 (setq frame-inhibit-implied-resize t)
@@ -195,6 +236,12 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: special-char-and-indentation
 :END:
+- *Purpose*: Configures whitespace visualization and standard indentation.
+- *Functionality*:
+  - Highlights trailing spaces, tabs, and empty lines.
+  - Disables hard tab characters in favor of spaces.
+- *Usage*: Active globally to ensure clean, consistent spacing and code layout.
+
 #+BEGIN_SRC emacs-lisp
   ;; Enable global whitespace mode with preferred styles (show special char)
   (require 'whitespace)
@@ -208,60 +255,72 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: icons-and-navigation
 :END:
+- *Purpose*: Sets up icons and a sidebar directory tree explorer.
+- *Functionality*:
+  - Configures icon sets and completion icons (all-the-icons).
+  - Integrates NeoTree sidebar explorer with icon support and auto-refresh.
+- *Usage*: Press `F5` to toggle the NeoTree file drawer on the left/right.
+
 #+BEGIN_SRC emacs-lisp
   ;; Use package management for managing plugins
-  (use-package all-the-icons
-    :ensure t
-    :defer
-    ;; Ensure icons are only loaded in a graphical environment
-    :if (display-graphic-p)
-    :init
-    ;; Install the all-the-icons fonts if not already installed
-    (unless (member "all-the-icons" (font-family-list))
-      (all-the-icons-install-fonts t)))
+(use-package all-the-icons
+  :ensure t
+  :defer
+  ;; Ensure icons are only loaded in a graphical environment
+  :if (display-graphic-p)
+  :init
+  ;; Install the all-the-icons fonts if not already installed
+  (unless (member "all-the-icons" (font-family-list))
+    (all-the-icons-install-fonts t)))
 
-  (use-package all-the-icons-completion
-    :ensure t
-    :defer
-    ;; Setup all-the-icons for Marginalia
-    :hook (marginalia-mode . #'all-the-icons-completion-marginalia-setup)
-    :init
-    ;; Enable the all-the-icons completion mode
-    (all-the-icons-completion-mode))
+(use-package all-the-icons-completion
+  :ensure t
+  :defer
+  ;; Setup all-the-icons for Marginalia
+  :hook (marginalia-mode . #'all-the-icons-completion-marginalia-setup)
+  :init
+  ;; Enable the all-the-icons completion mode
+  (all-the-icons-completion-mode))
 
-  (use-package neotree
-    :ensure t
-    :bind ("<f5>" . neotree-toggle)  ;; Bind F5 for toggling NeoTree
-    :hook (emacs-startup . neotree)  ;; Open NeoTree on startup
-    :custom
-    (neo-theme 'icons)                ;; Use icon theme for NeoTree
-    (neo-smart-open t)                ;; Smart open behavior
-    (neo-autorefresh t)               ;; Auto-refresh the tree
-    (neo-window-width 35)             ;; Set window width for NeoTree
-    (neo-toggle-window-keep-p t)      ;; Keep window position after toggling
-    (neo-show-hidden-files t)         ;; Show hidden files
+(use-package neotree
+  :ensure t
+  :bind ("<f5>" . neotree-toggle)  ;; Bind F5 for toggling NeoTree
+;;  :hook (emacs-startup . neotree)  ;; Open NeoTree on startup
+  :custom
+  (neo-theme 'icons)                ;; Use icon theme for NeoTree
+  (neo-smart-open t)                ;; Smart open behavior
+  (neo-autorefresh t)               ;; Auto-refresh the tree
+  (neo-window-width 35)             ;; Set window width for NeoTree
+  (neo-toggle-window-keep-p t)      ;; Keep window position after toggling
+  (neo-show-hidden-files t)         ;; Show hidden files
 
-    ;; Performance configuration - disable VC integration if slow
-    ;; (neo-vc-integration '(face char))
+  ;; Performance configuration - disable VC integration if slow
+  ;; (neo-vc-integration '(face char))
 
-    ;; Custom display function for the NeoTree buffer
-    (neo-display-action '(gopar/neo-display-fn))
-    :init
-    (defun gopar/neo-display-fn (buffer _alist)
-      ;; Display NeoTree buffer in a side window
-      (let ((window-pos (if (eq neo-window-position 'left) 'left 'right)))
-        (display-buffer-in-side-window buffer `((side . ,window-pos)
-                                                (inhibit-same-window . t)
-                                                (dedicated . t)
-                                                (window-parameters
-                                                 (no-delete-other-windows . t)
-                                                 (no-other-window . t)))))))
+  ;; Custom display function for the NeoTree buffer
+  (neo-display-action '(gopar/neo-display-fn))
+  :init
+  (defun gopar/neo-display-fn (buffer _alist)
+    ;; Display NeoTree buffer in a side window
+    (let ((window-pos (if (eq neo-window-position 'left) 'left 'right)))
+      (display-buffer-in-side-window buffer `((side . ,window-pos)
+                                              (inhibit-same-window . t)
+                                              (dedicated . t)
+                                              (window-parameters
+                                               (no-delete-other-windows . t)
+                                               (no-other-window . t)))))))
 #+END_SRC
 
 *** Tab Bar Configuration
 :PROPERTIES:
 :CUSTOM_ID: tab-bar-configuration
 :END:
+- *Purpose*: Configures and styles the built-in Emacs tab-bar.
+- *Functionality*:
+  - Displays active buffers/tabs in a clean top bar matching the current theme.
+  - Adds shortcuts for quick navigation.
+- *Usage*: Use `F3` for previous tab and `F4` for next tab.
+
 #+BEGIN_SRC emacs-lisp
   ;; Configure the tab bar appearance and behavior
   (setq tab-bar-close-button-show nil
@@ -297,6 +356,11 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: indentation-and-block-of-code
 :END:
+- *Purpose*: Visualizes code indentation levels.
+- *Functionality*:
+  - Draws faint vertical guide lines indicating current block indentation depths.
+- *Usage*: Enabled globally to assist with reading nested programming languages.
+
 #+BEGIN_SRC emacs-lisp
 ;; Highlight indentation levels for better code readability
 (use-package indent-guide
@@ -310,6 +374,11 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: line-numbers
 :END:
+- *Purpose*: Displays line numbers in code buffers.
+- *Functionality*:
+  - Activates line numbers specifically in programming-mode buffers.
+- *Usage*: Automatically active for programming source files to ease navigation.
+
 #+BEGIN_SRC emacs-lisp
 ;; Display line numbers in programming modes for easier navigation
 (add-hook 'prog-mode-hook #'display-line-numbers-mode)
@@ -319,6 +388,11 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: remap-keys-for-putty-support
 :END:
+- *Purpose*: Resolves terminal keyboard and escape-sequence conflicts when using PuTTY.
+- *Functionality*:
+  - Maps input sequences to functional standard key events.
+- *Usage*: Active automatically when running Emacs inside terminal sessions over SSH.
+
 #+BEGIN_SRC emacs-lisp
   ;; PuTTY Configuration for Enhanced Key Mapping
   ;; Specific settings are required for using Emacs over PuTTY.
@@ -391,6 +465,11 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: xterm-support
 :END:
+- *Purpose*: Configures color and mouse integration inside terminal frames.
+- *Functionality*:
+  - Enables xterm ANSI terminal color support and mouse-wheel scrolling.
+- *Usage*: Active automatically to bring GUI-like interactions to terminal Emacs.
+
 #+BEGIN_SRC emacs-lisp
   ;; Use xterm-color for proper ANSI color support in compilation buffers
   (use-package xterm-color
@@ -407,6 +486,11 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: utf8-or-die
 :END:
+- *Purpose*: Mandates global UTF-8 encoding support across Emacs.
+- *Functionality*:
+  - Configures standard, terminal, process, and keyboard systems to default to UTF-8.
+- *Usage*: Prevents file-corruption and weird characters issues when handling multi-byte text.
+
 #+BEGIN_SRC emacs-lisp
   ;; UTF-8 Configuration for comprehensive encoding support
   (define-coding-system-alias 'UTF-8 'utf-8)
@@ -427,6 +511,11 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: auto-backup
 :END:
+- *Purpose*: Re-routes backup files to a central, organized folder.
+- *Functionality*:
+  - Creates a backup directory in `~/.emacs.d/backups/` and redirects backup-saves there.
+- *Usage*: Keeps repository directories clean and uncluttered by avoiding local `*~` files.
+
 #+BEGIN_SRC emacs-lisp
 ;; Manage Emacs directories for backups and temporary files
 (let ((backup-dir "~/.emacs.d/backups")           ;; Backup directory
@@ -455,6 +544,12 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: special-features
 :END:
+- *Purpose*: Automates buffer state management and whitespace cleanup.
+- *Functionality*:
+  - Remembers cursor location on file re-open and auto-reverts modified buffers.
+  - Automatically strips trailing whitespace from files on save.
+- *Usage*: Background automation to enhance overall editing efficiency and hygiene.
+
 #+BEGIN_SRC emacs-lisp
   ;; Enable features for better usability
   (save-place-mode 1)                     ;; Remember cursor position when closing files
@@ -471,6 +566,11 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: json-mode
 :END:
+- *Purpose*: Provides syntax highlighting and formatting for JSON files.
+- *Functionality*:
+  - Installs `json-mode` and associates it with `.json` extensions.
+- *Usage*: Opens automatically when loading files with a `.json` extension.
+
 #+BEGIN_SRC emacs-lisp
   ;; JSON mode configuration
   (use-package json-mode
@@ -483,6 +583,11 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: yaml-mode
 :END:
+- *Purpose*: Provides syntax highlighting and support for YAML files.
+- *Functionality*:
+  - Installs `yaml-mode` and associates it with `.yaml` extensions.
+- *Usage*: Opens automatically when loading files with a `.yaml` extension.
+
 #+BEGIN_SRC emacs-lisp
   ;; YAML mode configuration
   (use-package yaml-mode
@@ -491,10 +596,32 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
   (add-to-list 'auto-mode-alist '("\\.yaml\\'" . yaml-mode)) ;; Associate .yaml files with yaml-mode
 #+END_SRC
 
+*** Go mode
+:PROPERTIES:
+:CUSTOM_ID: go-mode
+:END:
+- *Purpose*: Provides programming-mode support for the Go language.
+- *Functionality*:
+  - Configures `go-mode` with syntax highlighting and file association.
+- *Usage*: Opens automatically when loading files with a `.go` extension.
+
+#+BEGIN_SRC emacs-lisp
+  ;; GO mode configuration
+  (use-package go-mode
+    :ensure t
+    :init)
+  (add-to-list 'auto-mode-alist '("\\.go\\'" . go-mode)) ;; Associate .yaml files with yaml-mode
+#+END_SRC
+
 *** Csv mode
 :PROPERTIES:
 :CUSTOM_ID: csv-mode
 :END:
+- *Purpose*: Enhances presentation and editing of CSV tabular files.
+- *Functionality*:
+  - Provides automatic separator detection and alignment of tabular data.
+- *Usage*: Opens automatically on loading `.csv` files, aligning values nicely.
+
 #+BEGIN_SRC emacs-lisp
   ;; CSV mode configuration
   (use-package csv-mode
@@ -502,13 +629,18 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
     :hook (
            (csv-mode . csv-guess-set-separator)  ;; Automatically set the separator
            (csv-mode . csv-align-mode)            ;; Align CSV data
-          ))
+           ))
 #+END_SRC
 
 *** Markdown mode
 :PROPERTIES:
 :CUSTOM_ID: markdown-mode
 :END:
+- *Purpose*: Provides full support for Markdown document editing.
+- *Functionality*:
+  - Integrates syntax highlighting, TOC generation, and markdown compilation.
+- *Usage*: Opens automatically on `.md` files; press `C-c C-e` to execute markdown commands.
+
 #+BEGIN_SRC emacs-lisp
   ;; Markdown mode configuration
   (use-package markdown-mode
@@ -516,21 +648,26 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
     :mode ("README\\.md\\'" . gfm-mode)  ;; Associate README.md with gfm-mode
     :init (setq markdown-command "multimarkdown") ;; Set the markdown command
     :bind (:map markdown-mode-map
-           ("C-c C-e" . markdown-do))) ;; Keybinding for markdown-do
+                ("C-c C-e" . markdown-do))) ;; Keybinding for markdown-do
 #+END_SRC
 
 *** Org mode
 :PROPERTIES:
 :CUSTOM_ID: org-mode
 :END:
+- *Purpose*: Configures automated Table of Contents generation in Org files.
+- *Functionality*:
+  - Hooks `org-make-toc` to auto-re-generate TOC headers on save.
+- *Usage*: Automatically active in org buffers; updates index blocks instantly.
+
 #+BEGIN_SRC emacs-lisp
   ;; to insert a new TOC : M-x org-make-toc-insert
   ;; to populate TOC : org-make-toc
-  ;; to auto update toc : org-make-toc-mode
+  ;; to auto update toc : org-maketoc-mode
   (use-package org-make-toc
     :ensure t
     :hook (org-mode . org-make-toc-mode)
-    :custom (org-make-toc-insert-custom-ids t))
+    )
   (setq org-support-shift-select t)
 #+END_SRC
 
@@ -538,36 +675,46 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: pdf-mode
 :END:
+- *Purpose*: Integrates PDF viewing directly inside Emacs.
+- *Functionality*:
+  - Configures `pdf-tools` and links Org-mode links to PDF locations.
+- *Usage*: Commented out by default; uncomment to open PDFs natively inside Emacs.
+
 #+BEGIN_SRC emacs-lisp
   ;; PDF tools configuration (commented out)
-   (use-package pdf-tools
-     :ensure t
-     :init
-     (pdf-tools-install) ;; Install pdf-tools
-     :config
-     (add-hook 'pdf-isearch-minor-mode-hook (lambda () (ctrlf-local-mode -1)))
-     (use-package org-pdftools
-       :ensure t
-       :hook (org-mode . org-pdftools-setup-link)))
-   (add-to-list 'auto-mode-alist '("\\.[pP][dD][fF]\\'" . pdf-view-mode)) ;; Associate PDF files with pdf-view-mode
+  (use-package pdf-tools
+    :ensure t
+    :init
+    (pdf-tools-install) ;; Install pdf-tools
+    :config
+    (add-hook 'pdf-isearch-minor-mode-hook (lambda () (ctrlf-local-mode -1)))
+    (use-package org-pdftools
+      :ensure t
+      :hook (org-mode . org-pdftools-setup-link)))
+  (add-to-list 'auto-mode-alist '("\\.[pP][dD][fF]\\'" . pdf-view-mode)) ;; Associate PDF files with pdf-view-mode
 #+END_SRC
 
 *** PlantUML mode
-#+begin_src elisp
+- *Purpose*: Configures PlantUML diagrams generation in Org files.
+- *Functionality*:
+  - Integrates `plantuml-mode` and enables Babel evaluation with auto-reloading of images.
+- *Usage*: Open any `.org` file and press `C-c C-c` inside a PlantUML code block to render it.
+
+#+begin_src emacs-lisp
   ;; PlantUML mode
   ;; prerequisite is to have downloaded plantuml.jar at https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar
   (use-package plantuml-mode
     :ensure t)  ; For syntax highlighting (optional)
 #+end_src
 
-#+begin_src elisp
+#+begin_src emacs-lisp
   ;; Enable Babel support
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((plantuml . t)))
 #+end_src
 
-#+begin_src elisp
+#+begin_src emacs-lisp
 ;; Reload images in org-mode when evaluating a block of code
 (defun my-org-reload-images-after-babel-execute ()
   "Toggle inline images to force a refresh after evaluating an Org Babel block."
@@ -576,17 +723,22 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
       (org-toggle-inline-images t)))  ; Turn on
 
 (add-hook 'org-babel-after-execute-hook 'my-org-reload-images-after-babel-execute)
- #+end_src
+#+end_src
 
-#+begin_src elisp
+#+begin_src emacs-lisp
   ;; Set JAR path
   (setq org-plantuml-jar-path "~/plantuml/plantuml.jar")
- #+end_src
+#+end_src
 
 *** All mode
 :PROPERTIES:
 :CUSTOM_ID: all-mode
 :END:
+- *Purpose*: Globally allows local-variables execution in files.
+- *Functionality*:
+  - Permits files to run local initialization variables safely on open.
+- *Usage*: Enables local properties defined at the end of Org/source files.
+
 #+BEGIN_SRC emacs-lisp
   ;; Allow local emacs variable to be set in the file
   (setq enable-local-variables :all
@@ -601,6 +753,11 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: general-emacs
 :END:
+- *Purpose*: Configures global interactive completion defaults.
+- *Functionality*:
+  - Enables electric pairing of quotes/parentheses and command completion filters.
+- *Usage*: Automatically active when writing code or triggering minibuffer lists.
+
 #+BEGIN_SRC emacs-lisp
   ;; General Emacs configuration for completion
   (use-package emacs
@@ -615,6 +772,11 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: snippet
 :END:
+- *Purpose*: Configures global templates and boilerplate expansion.
+- *Functionality*:
+  - Enables YASnippet globally with templates in `~/.emacs.d/snippets`.
+- *Usage*: Type a snippet trigger and press `Tab` to expand boilerplate code blocks.
+
 #+BEGIN_SRC emacs-lisp
   ;; Snippet management using yasnippet
   (use-package yasnippet
@@ -628,11 +790,11 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: vertico
 :END:
-- *Purpose*: Vertico is a vertical completion interface that aims to enhance the completion experience in Emacs. It provides a simple and efficient way to display completion candidates in a vertical list.
+- *Purpose*: Displays completion options in a clean vertical menu.
 - *Functionality*:
-  - Displays completions vertically, making it easy to see multiple options at once without obscuring the text.
-  - Supports standard Emacs completion functions and works seamlessly with other completion frameworks.
-- *Usage*: It integrates with Emacs's built-in completion system and is typically used when entering commands, filenames, or any other text that requires completion.
+  - Arranges vertical listing in the minibuffer for better visibility.
+  - Supports standard Emacs completion functions seamlessly.
+- *Usage*: Active automatically when selecting commands or opening files.
 
 #+BEGIN_SRC emacs-lisp
   ;; Vertical interactive completion using vertico
@@ -646,11 +808,11 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: corfu
 :END:
-- *Purpose*: Corfu is a pop-up completion framework that provides in-buffer completion functionality. It aims to improve the way completions are presented while typing.
+- *Purpose*: Displays a popup completion interface directly at the cursor.
 - *Functionality*:
-  - Displays a pop-up menu of candidates while typing, either as you type or after you hit a specific command.
-  - Offers features like cycling through candidates, auto-completion, and various configurability options (e.g., auto-preselecting and previewing completions).
-- *Usage*: Corfu is particularly useful for providing immediate feedback as you type, enhancing the interactive experience for users of programming modes or text editing.
+  - Provides rapid, interactive auto-completion while editing.
+  - Offers features like cycling through candidates and auto-completion.
+- *Usage*: Prompts popup suggestions as you type inside source files.
 
 #+BEGIN_SRC emacs-lisp
   ;; Pop-up completion using corfu
@@ -685,15 +847,11 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: dabbrev
 :END:
-
-:PROPERTIES:
-:CUSTOM_ID: dabbrev
-:END:
-- *Purpose*: Dabbrev is a built-in Emacs package designed for “dynamic abbreviation expansion.” It aims to facilitate fast and flexible word completion based on what you've previously typed in your current buffer or other buffers.
+- *Purpose*: Dynamic abbreviation matching based on buffer content.
 - *Functionality*:
-  - Searches for words and phrases in all open buffers to provide completion options based on your current input.
-  - Offers configurations for case sensitivity and can check multiple buffers to find relevant candidates.
-- *Usage*: Dabbrev is often used by typing a portion of a word and invoking completion to fill in the rest, speeding up text editing and coding.
+  - Scans open buffers to complete repetitive words dynamically.
+  - Offers configurations for case sensitivity and multi-buffer checks.
+- *Usage*: Automatically provides completion suggestions for repeating terms.
 
 #+BEGIN_SRC emacs-lisp
   ;; Dabbrev configuration for buffer completion
@@ -711,11 +869,11 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: cape
 :END:
-- *Purpose*: Cape (Completion At Point Extensions) is a library designed to extend Emacs's completion capabilities. It provides various completion backends and offers an easy way to integrate multiple completion sources.
+- *Purpose*: Enhances completion backend selection and composition.
 - *Functionality*:
+  - Combines multiple completion functions (such as dictionary, dabbrev, or file).
   - Works with and enhances existing completion frameworks like Vertico and Corfu.
-  - Offers integrations for features like dictionary completion, snippet expansion, and specialized completion behaviors based on context (e.g., completing within comments or strings).
-- *Usage*: Cape is useful in setups where multiple completion sources need to be integrated, helping to tailor the completion behavior to specific coding environments and workflows.
+- *Usage*: Extends the completion options shown by Vertico and Corfu.
 
 #+BEGIN_SRC emacs-lisp
   ;; Autocompletion features using cape
@@ -739,7 +897,10 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: consult
 :END:
-- *Purpose*: Provides search and navigation commands
+- *Purpose*: Implements advanced, interactive search and navigation utilities.
+- *Functionality*:
+  - Provides preview-capable grep, line-search, buffer-switching, and bookmark commands.
+- *Usage*: Press `M-s l` to search lines in current buffer, or `C-x b` for interactive buffer switching.
 
 #+BEGIN_SRC emacs-lisp
   (use-package consult
@@ -889,12 +1050,12 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
 
 ;; Allow Magit to search in authinfo for user/password
 (add-hook 'magit-process-find-password-functions
-            'magit-process-password-auth-source)
+          'magit-process-password-auth-source)
 
 ;; Forge integration for enhanced Magit functionality (commented out due to installation issues)
 (use-package forge
-   :ensure t
-   :init)
+  :ensure t
+  :init)
 #+END_SRC
 
 ** Syntax check
@@ -911,6 +1072,11 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
 
 ** LLMs
 *** Common for all
+- *Purpose*: Initializes `gptel` and sets global prefix behaviors.
+- *Functionality*:
+  - Activates the `gptel-org` module and sets visual prompt/response dividers.
+- *Usage*: Background setup to configure default gptel conversation layouts.
+
 #+BEGIN_SRC emacs-lisp
   ;; gptel
   (use-package gptel
@@ -919,37 +1085,189 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
 
   (require 'gptel-org) ;; Ensure gptel-org module is loaded
 
-  (setq gptel-default-mode 'org-mode)
-
+  (setq gptel-default-mode 'org-mode
+        gptel-prompt-prefix-alist '((markdown-mode . "# ") (org-mode . "* ") (text-mode . "🤖: "))
+        gptel-response-prefix-alist '((markdown-mode . "# ") (org-mode . "** ") (text-mode . "🤖: "))
+        )
 #+END_SRC
+
 *** OpenAI
+- *Purpose*: Registers OpenAI API model configurations.
+- *Functionality*:
+  - Registers the GPT-4o-mini and o4-mini models under the OpenAI backend.
+- *Usage*: Select "OpenAI" as the AI backend during conversation setup.
+
 #+BEGIN_SRC emacs-lisp
   (setq gptel-openai-backend
-      (gptel-make-openai "OpenAI"
-        :host "api.openai.com"
-        :models '("gpt-4o-mini" "gpt-4.1" "o4-mini")))
-  #+END_SRC
+        (gptel-make-openai "OpenAI"
+          :host "api.openai.com"
+          :models '("gpt-4o-mini" "gpt-4.1" "o4-mini")))
+#+END_SRC
+
 *** Gemini
+- *Purpose*: Registers Google Gemini model configurations.
+- *Functionality*:
+  - Registers `gemini-3.5-flash` model with streaming support.
+- *Usage*: Select "Gemini" as the AI backend to communicate with Google models.
+
 #+BEGIN_SRC emacs-lisp
   (setq gptel-gemini-backend
         (gptel-make-gemini "Gemini"
           :key #'gptel-api-key-from-auth-source
           :stream t
           :host "generativelanguage.googleapis.com"
-          :models '("gemini-2.5-flash")))
+          :models '("gemini-3.5-flash")))
 #+END_SRC
+
+*** Copilot
+- *Purpose*: Configures GitHub Copilot Chat integration.
+- *Functionality*:
+  - Instantiates the GitHub Copilot Chat backend for interactive requests.
+- *Usage*: Select "Copilot Chat" as the AI backend.
+
+#+BEGIN_SRC emacs-lisp
+  (setq gptel-copilot-backend
+        (gptel-make-gh-copilot "Copilot Chat"))
+#+END_SRC
+
 *** Mistral
+- *Purpose*: Registers Mistral AI model configurations.
+- *Functionality*:
+  - Registers the `mistral-large-latest` backend with API key support.
+- *Usage*: Select "Mistral" as the AI backend.
+
 #+BEGIN_SRC emacs-lisp
   (setq gptel-mistral-backend
         (gptel-make-openai "Mistral"
           :key #'gptel-api-key-from-auth-source
           :host "api.mistral.ai"
-          :models '("mistral-medium" "mistral-large")))
+          :models '("mistral-large-latest")))
 #+END_SRC
-*** Copilot
+
+*** Custom Helpers & Configuration
+- *Purpose*: Adds advanced interactive AI utilities and custom directives.
+- *Functionality*:
+  - Implements functions for persistent local variables and interactive backend picking.
+  - Provides code review commands and custom gptel directives.
+- *Usage*: Run `M-x my/gptel-with-backend-selection` to start a session, or `M-x my/gptel-review-code` for code review.
+
 #+BEGIN_SRC emacs-lisp
-  (setq gptel-copilot-backend
-        (gptel-make-gh-copilot "Copilot Chat"))
+  (defun my/gptel-ensure-local-variables (backend-sym model)
+    "Ensure standard Org/gptel local variables exist at the end of the buffer."
+    (save-excursion
+      (goto-char (point-max))
+      ;; Only insert if the block doesn't exist yet
+      (unless (save-excursion (search-backward "Local Variables:" nil t))
+        (goto-char (point-max))
+        (unless (bolp) (insert "\n"))
+        (insert "\n# Local Variables:\n"
+                (format "# gptel-backend: %s\n" backend-sym)
+                (format "# gptel-model: \"%s\"\n" model)
+                "# eval: (remove-hook 'before-save-hook 'org-make-toc)\n"
+                "# eval: (gptel-mode 1)\n"
+                "# eval: (toggle-truncate-lines)\n"
+                "# eval: (org-toggle-inline-images)\n"
+                "# End:\n"))))
+
+  (defun my/gptel-with-backend-selection ()
+    "Start gptel-mode after prompting for backend selection and persisting it."
+    (interactive)
+    (let* (;; Store the actual variable symbols instead of evaluating them immediately
+           (choices '(("OpenAI" . gptel-openai-backend)
+                      ("Gemini" . gptel-gemini-backend)
+                      ("Mistral" . gptel-mistral-backend)
+                      ("Copilot" . gptel-copilot-backend)))
+           (selected-name (completing-read "Select AI Backend: " choices nil t))
+           (backend-sym (cdr (assoc selected-name choices)))
+           ;; Retrieve the actual backend object
+           (backend-obj (symbol-value backend-sym))
+           ;; Get the first model from the backend's model list as the default
+           (model (car (gptel-backend-models backend-obj))))
+
+      ;; Set them locally for the current session
+      (setq-local gptel-backend backend-obj)
+      (setq-local gptel-model model)
+
+      ;; Write them to the file-local variables so they persist on save/reopen
+      (my/gptel-ensure-local-variables backend-sym model)
+      (gptel-mode 1)))
+
+  (defun my/gptel-review-code ()
+    "Review selected code or current buffer in a split window.
+  Prompts for the AI backend and model to use."
+    (interactive)
+    (let* (;; Use backquote (`) so we can evaluate variables with comma (,)
+           (choices `(("OpenAI (gpt-4o-mini)" . (,gptel-openai-backend . "gpt-4o-mini"))
+                      ("OpenAI (o4-mini)" . (,gptel-openai-backend . "o4-mini"))
+                      ("Gemini (gemini-3.5-flash)" . (,gptel-gemini-backend . "gemini-3.5-flash"))
+                      ("Mistral (mistral-large-latest)" . (,gptel-mistral-backend . "mistral-large-latest"))
+                      ("Copilot Chat" . (,gptel-copilot-backend . nil))))
+           (selected-key (completing-read "Select AI Backend: " choices nil t))
+           (selected-val (cdr (assoc selected-key choices)))
+           (backend (car selected-val))
+           (model (cdr selected-val))
+           (code (if (use-region-p)
+                     (buffer-substring-no-properties (region-beginning) (region-end))
+                   (buffer-substring-no-properties (point-min) (point-max))))
+
+           ;; Updated prompt to request a Table of Contents
+           (prompt (concat "Perform a strict code review of the following code.\n\n"
+                           "CRITICAL REQUIREMENTS:\n"
+                           "1. You must format your entire response using Org-mode syntax.\n"
+                           "2. Start your response with a 'Table of Contents' section listing "
+                           "all the main headings of your review as a clean Org-mode list.\n"
+                           "3. Make a separate review for each function, identifying bugs, security issues, "
+                           "and performance bottlenecks.\n"
+                           "4. Provide a code example in order to correct each bug"
+                           "5. All code snippets and code examples must be wrapped "
+                           "in '#+BEGIN_SRC <language>' and '#+END_SRC' blocks.\n\n"
+                           "Code to review:\n"
+                           code))
+
+
+           (review-buf (get-buffer-create "*AI Code Review/")))
+
+      ;; Display the review buffer in a side window on the right
+      (display-buffer-in-side-window review-buf '((side . right) (window-width . 80)))
+
+      (with-current-buffer review-buf
+        (read-only-mode -1)
+        (erase-buffer)
+        (org-mode)
+        (insert (format "/ Code Review Output (%s)\n\n/Analyzing.../\n" selected-key)))
+
+
+      ;; Dynamically bind gptel-backend and gptel-model for the request
+      (let ((gptel-backend backend)
+            (gptel-model model))
+        (gptel-request
+         prompt
+         :callback (lambda (response info)
+                     (cond
+                      ((and response (stringp response))
+                       (with-current-buffer review-buf
+                         (erase-buffer)
+                         (insert (format "# Code Review Output (%s)\n\n" selected-key))
+                         (insert response)
+                         (org-mode)))
+                      ((plist-get info :error)
+                       (message "Review failed: %s" (plist-get info :error)))))))))
+
+  (with-eval-after-load 'gptel
+    (setq gptel-directives
+          '((default . "You are a large language model living in Emacs and a helpful assistant. Respond concisely. Always answer in English even if I ask questions in French. If sources for answers are more than one year old, always warn me with this text 'WARNING OLD SOURCES' at the beginning of the answer. When providing a bash shell script, always split script into smart functions and add an additional BATS script in order to test functions. Always add at least one link to documentation referring to your answer.")))
+      ;; Force buffer-local behavior
+    (setq-local gptel-directives gptel-directives)
+    )
+#+END_SRC
+
+** Editor Code Assistant
+:PROPERTIES:
+:CUSTOM_ID: editor-code-assistant
+:END:
+#+BEGIN_SRC emacs-lisp
+  (use-package eca
+    :vc (:url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest))
 #+END_SRC
 
 ** Usefull Key Binding
@@ -978,6 +1296,11 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
     :ensure t
     :init
     (marginalia-mode))
+
+  ;; if needed https://github.com/cretinon/ma-cgr
+  (ignore-errors (load "~/git/ma-cgr/ma-cgr.el"))
+
+  (provide '.emacs)
 #+END_SRC
 
 * License
