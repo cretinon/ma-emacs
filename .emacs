@@ -637,16 +637,44 @@
         :host "api.mistral.ai"
         :models '("mistral-large-latest")))
 
+(defun my/gptel-ensure-local-variables (backend-sym model)
+  "Ensure standard Org/gptel local variables exist at the end of the buffer."
+  (save-excursion
+    (goto-char (point-max))
+    ;; Only insert if the block doesn't exist yet
+    (unless (save-excursion (search-backward "Local Variables:" nil t))
+      (goto-char (point-max))
+      (unless (bolp) (insert "\n"))
+      (insert "\n# Local Variables:\n"
+              (format "# gptel-backend: %s\n" backend-sym)
+              (format "# gptel-model: \"%s\"\n" model)
+              "# eval: (remove-hook 'before-save-hook 'org-make-toc)\n"
+              "# eval: (gptel-mode 1)\n"
+              "# eval: (toggle-truncate-lines)\n"
+              "# eval: (org-toggle-inline-images)\n"
+              "# End:\n"))))
+
 (defun my/gptel-with-backend-selection ()
-  "Start gptel-mode after prompting for backend selection."
+  "Start gptel-mode after prompting for backend selection and persisting it."
   (interactive)
-  (let* ((choices `(("OpenAI" . ,gptel-openai-backend)
-                    ("Gemini" . ,gptel-gemini-backend)
-                    ("Mistral" . ,gptel-mistral-backend)
-                    ("Copilot" . ,gptel-copilot-backend)))
-         (backend (cdr (assoc (completing-read "Select AI Backend: " choices nil t)
-                              choices))))
-    (setq-local gptel-backend backend)
+  (let* (;; Store the actual variable symbols instead of evaluating them immediately
+         (choices '(("OpenAI" . gptel-openai-backend)
+                    ("Gemini" . gptel-gemini-backend)
+                    ("Mistral" . gptel-mistral-backend)
+                    ("Copilot" . gptel-copilot-backend)))
+         (selected-name (completing-read "Select AI Backend: " choices nil t))
+         (backend-sym (cdr (assoc selected-name choices)))
+         ;; Retrieve the actual backend object
+         (backend-obj (symbol-value backend-sym))
+         ;; Get the first model from the backend's model list as the default
+         (model (car (gptel-backend-models backend-obj))))
+
+    ;; Set them locally for the current session
+    (setq-local gptel-backend backend-obj)
+    (setq-local gptel-model model)
+
+    ;; Write them to the file-local variables so they persist on save/reopen
+    (my/gptel-ensure-local-variables backend-sym model)
     (gptel-mode 1)))
 
 (defun my/gptel-review-code ()
@@ -716,6 +744,9 @@ Prompts for the AI backend and model to use."
     ;; Force buffer-local behavior
   (setq-local gptel-directives gptel-directives)
   )
+
+(use-package eca
+  :vc (:url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest))
 
 (defun reload-init-file ()
   (interactive)
