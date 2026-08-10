@@ -750,7 +750,9 @@ Prompts for the AI backend and model to use."
   )
 
 (use-package eca
-  :vc (:url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest))
+  :vc (:url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest)
+  :custom
+  (eca-chat-custom-model "google/gemini-3.5-flash"))
 
 (defun reload-init-file ()
   (interactive)

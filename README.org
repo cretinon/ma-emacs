@@ -1270,9 +1270,16 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
 :PROPERTIES:
 :CUSTOM_ID: editor-code-assistant
 :END:
+- *Purpose*: Integrates ECA AI assistant client into Emacs.
+- *Functionality*:
+  - Installs ECA package and configures default AI chat model.
+- *Usage*: Opens automatically when running `M-x eca` or `C-c .`.
+
 #+BEGIN_SRC emacs-lisp
   (use-package eca
-    :vc (:url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest))
+    :vc (:url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest)
+    :custom
+    (eca-chat-custom-model "google/gemini-3.5-flash"))
 #+END_SRC
 
 ** Usefull Key Binding
