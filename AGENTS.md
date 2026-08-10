@@ -56,6 +56,12 @@ When generating code or responding in this repo (mirroring `gptel-directives`):
 - **Bash Scripts**: Divide bash scripts into modular functions and provide an accompanying BATS test script.
 - **Documentation**: Always include at least one official documentation link.
 
+## Search & Research Order Directive
+When searching information, or solving tasks, the AI agent must strictly follow this search order:
+1. **Local Documentation**: First, search through local documentation files (e.g. `*.org`, `*.md`, `docs/`, `README.org`).
+2. **Web Documentation**: Second, search external/web documentation using available web search or URL tools.
+3. **Codebase**: Third, search source code files across the repository.
+
 ### Custom Code Review (`my/gptel-review-code`) Format:
 - Use strict Org-mode syntax starting with a Table of Contents.
 - Perform function-by-function analysis (bugs, security, performance).
