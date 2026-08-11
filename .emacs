@@ -629,7 +629,7 @@
         :key #'gptel-api-key-from-auth-source
         :stream t
         :host "generativelanguage.googleapis.com"
-        :models '("gemini-3.5-flash")))
+        :models '("gemini-3.5-flash-lite")))
 
 (setq gptel-copilot-backend
       (gptel-make-gh-copilot "Copilot Chat"))
@@ -687,8 +687,7 @@ Prompts for the AI backend and model to use."
   (interactive)
   (let* (;; Use backquote (`) so we can evaluate variables with comma (,)
          (choices `(("OpenAI (gpt-4o-mini)" . (,gptel-openai-backend . "gpt-4o-mini"))
-                    ("OpenAI (o4-mini)" . (,gptel-openai-backend . "o4-mini"))
-                    ("Gemini (gemini-3.5-flash)" . (,gptel-gemini-backend . "gemini-3.5-flash"))
+                    ("Gemini (gemini-3.5-flash-lite)" . (,gptel-gemini-backend . "gemini-3.5-flash-lite"))
                     ("Mistral (mistral-large-latest)" . (,gptel-mistral-backend . "mistral-large-latest"))
                     ("Copilot Chat" . (,gptel-copilot-backend . nil))))
          (selected-key (completing-read "Select AI Backend: " choices nil t))
@@ -749,10 +748,31 @@ Prompts for the AI backend and model to use."
   (setq-local gptel-directives gptel-directives)
   )
 
+;; eca
+(require 'auth-source)
+
+(defun my/get-eca-api-key ()
+  "Fetch API key from .authinfo.gpg only when ECA start."
+  ;;  (interactive)
+  (unless (getenv "GOOGLE_API_KEY")
+    (let ((match (car (auth-source-search :host "fakeurlforpaidgoogletier.googleapis.com" :user "apikey"))))
+      (when match
+        (let ((secret (plist-get match :secret)))
+          (setenv "GOOGLE_API_KEY" (if (functionp secret)
+                                          (funcall secret)
+                                        secret)))))))
+
+;; Wrap the interactive command so decrypt happens BEFORE eca command executes
+(defun my/eca ()
+  "Decrypt authinfo key first, then launch ECA."
+  (interactive)
+  (my/get-eca-api-key)
+  (call-interactively 'eca))
+
 (use-package eca
   :vc (:url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest)
   :custom
-  (eca-chat-custom-model "google/gemini-3.5-flash"))
+  (eca-chat-custom-model "google/gemini-3.5-flash-lite"))
 
 (defun reload-init-file ()
   (interactive)
