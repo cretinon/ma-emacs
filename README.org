@@ -1270,12 +1270,35 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
 :PROPERTIES:
 :CUSTOM_ID: editor-code-assistant
 :END:
-- *Purpose*: Integrates ECA AI assistant client into Emacs.
+- *Purpose*: Integrates ECA (Editor Code Assistant) AI client into Emacs with secure API key storage. See [[https://github.com/editor-code-assistant/eca-emacs][ECA Emacs Github]] or [[https://eca.dev][ECA Homepage]] for more details.
 - *Functionality*:
-  - Installs ECA package and configures default AI chat model.
-- *Usage*: Opens automatically when running `M-x eca` or `C-c .`.
+  - Installs the `eca` package and sets the default AI model to `google/gemini-3.5-flash`.
+  - Automatically fetches the Google API key from encrypted `auth-source` on startup.
+  - Defines an interactive `my/eca` wrapper to ensure API keys are prepared before running ECA.
+- *Usage*: Run `M-x my/eca` to start the Editor Code Assistant session with automatic authentication.
 
 #+BEGIN_SRC emacs-lisp
+  ;; eca
+  (require 'auth-source)
+
+  (defun my/get-eca-api-key ()
+    "Fetch API key from .authinfo.gpg only when ECA start."
+    ;;  (interactive)
+    (unless (getenv "GOOGLE_API_KEY")
+      (let ((match (car (auth-source-search :host "fakeurlforpaidgoogletier.googleapis.com" :user "apikey"))))
+        (when match
+          (let ((secret (plist-get match :secret)))
+            (setenv "GOOGLE_API_KEY" (if (functionp secret)
+                                            (funcall secret)
+                                          secret)))))))
+
+  ;; Wrap the interactive command so decrypt happens BEFORE eca command executes
+  (defun my/eca ()
+    "Decrypt authinfo key first, then launch ECA."
+    (interactive)
+    (my/get-eca-api-key)
+    (call-interactively 'eca))
+
   (use-package eca
     :vc (:url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest)
     :custom

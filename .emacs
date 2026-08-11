@@ -31,7 +31,7 @@
 (package-initialize)
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
- (package-install 'use-package))
+  (package-install 'use-package))
 (require 'use-package)
 
 ;; if we need to call debbuger on specific call
@@ -454,7 +454,7 @@
   ;; (add-to-list 'completion-at-point-functions #'gopar/cape-yasnippet-keyword-dabbrev)
   ;; (add-to-list 'completion-at-point-functions #'gopar/cape-dict-only-in-strings)
   ;; (add-to-list 'completion-at-point-functions #'gopar/cape-dict-only-in-comments)
-  )
+)
 
 (use-package consult
   :ensure t
@@ -489,7 +489,7 @@
    consult--source-recent-file consult--source-project-recent-file
    :preview-key '(:debounce 0.4 any))
   (setq consult-narrow-key "<") ;; "C-+"
-  )
+)
 
 ;; Magit configuration for Git integration
 (use-package magit
@@ -629,11 +629,10 @@
         :key #'gptel-api-key-from-auth-source
         :stream t
         :host "generativelanguage.googleapis.com"
-        :models '("gemini-3.5-flash-lite")))
+        :models '("gemini-3.5-flash")))
 
 (setq gptel-copilot-backend
       (gptel-make-gh-copilot "Copilot Chat"))
-
 
 (setq gptel-mistral-backend
       (gptel-make-openai "Mistral"
@@ -687,7 +686,8 @@ Prompts for the AI backend and model to use."
   (interactive)
   (let* (;; Use backquote (`) so we can evaluate variables with comma (,)
          (choices `(("OpenAI (gpt-4o-mini)" . (,gptel-openai-backend . "gpt-4o-mini"))
-                    ("Gemini (gemini-3.5-flash-lite)" . (,gptel-gemini-backend . "gemini-3.5-flash-lite"))
+                    ("OpenAI (o4-mini)" . (,gptel-openai-backend . "o4-mini"))
+                    ("Gemini (gemini-3.5-flash)" . (,gptel-gemini-backend . "gemini-3.5-flash"))
                     ("Mistral (mistral-large-latest)" . (,gptel-mistral-backend . "mistral-large-latest"))
                     ("Copilot Chat" . (,gptel-copilot-backend . nil))))
          (selected-key (completing-read "Select AI Backend: " choices nil t))
@@ -772,12 +772,11 @@ Prompts for the AI backend and model to use."
 (use-package eca
   :vc (:url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest)
   :custom
-  (eca-chat-custom-model "google/gemini-3.5-flash-lite"))
+  (eca-chat-custom-model "google/gemini-3.5-flash"))
 
 (defun reload-init-file ()
   (interactive)
   (load-file user-init-file))
-
 (global-set-key (kbd "C-c C-l") 'reload-init-file)
 (global-set-key (kbd "C-c ;")   'comment-region)
 (global-set-key (kbd "C-c .")   'uncomment-region)
