@@ -660,12 +660,35 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: org-mode
 :END:
-- *Purpose*: Configures automated Table of Contents generation in Org files.
+- *Purpose*: Configures Org-mode visual rendering and automated Table of Contents generation.
 - *Functionality*:
   - Hooks `org-make-toc` to auto-re-generate TOC headers on save.
-- *Usage*: Automatically active in org buffers; updates index blocks instantly.
+  - Hides visual emphasis markers (like `*`, `=`, `/`) for cleaner document display.
+  - Customizes `org-code` and `org-verbatim` faces to clearly distinguish formatted text when markers are hidden.
+- *Usage*:
+  - Automatically active in org buffers; updates index blocks instantly.
+  - Displays formatted text inline without cluttering markdown/org markers.
 
 #+BEGIN_SRC emacs-lisp
+  ;; Configure Org-mode core settings and rendering
+  (use-package org
+    :custom
+    (org-hide-emphasis-markers t)
+    :config
+    ;; Ensure code and verbatim text are distinct when markers are hidden
+    (set-face-attribute 'org-code nil
+                        :inherit 'fixed-pitch
+                        :foreground "#ff79c6")
+    (set-face-attribute 'org-verbatim nil
+                        :inherit 'fixed-pitch
+                        :foreground "#f1fa8c"))
+
+  (defun my/org-toggle-emphasis-markers ()
+    "Toggle hiding of Org emphasis markers."
+    (interactive)
+    (setq org-hide-emphasis-markers (not org-hide-emphasis-markers))
+    (font-lock-flush))
+
   ;; to insert a new TOC : M-x org-make-toc-insert
   ;; to populate TOC : org-make-toc
   ;; to auto update toc : org-maketoc-mode

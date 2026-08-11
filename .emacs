@@ -337,6 +337,25 @@
   :bind (:map markdown-mode-map
               ("C-c C-e" . markdown-do))) ;; Keybinding for markdown-do
 
+;; Configure Org-mode core settings and rendering
+(use-package org
+  :custom
+  (org-hide-emphasis-markers t)
+  :config
+  ;; Ensure code and verbatim text are distinct when markers are hidden
+  (set-face-attribute 'org-code nil
+                      :inherit 'fixed-pitch
+                      :foreground "#ff79c6")
+  (set-face-attribute 'org-verbatim nil
+                      :inherit 'fixed-pitch
+                      :foreground "#f1fa8c"))
+
+(defun my/org-toggle-emphasis-markers ()
+  "Toggle hiding of Org emphasis markers."
+  (interactive)
+  (setq org-hide-emphasis-markers (not org-hide-emphasis-markers))
+  (font-lock-flush))
+
 ;; to insert a new TOC : M-x org-make-toc-insert
 ;; to populate TOC : org-make-toc
 ;; to auto update toc : org-maketoc-mode
