@@ -608,6 +608,10 @@
   :ensure t  ;; Ensure git-gutter is installed
   :hook (after-init . global-git-gutter-mode))  ;; Enable git-gutter mode after initialization
 
+(defun my-git-gutter-refresh-after-push (&rest _)
+  (git-gutter:update-all-windows))
+(advice-add 'magit-push :after #'my-git-gutter-refresh-after-push)
+
 ;; Key binding for quick access to Magit status
 (global-set-key (kbd "<f6>") 'magit)  ;; Bind F6 to invoke Magit
 
