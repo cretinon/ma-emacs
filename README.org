@@ -1172,6 +1172,20 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
           :models '("mistral-large-latest")))
 #+END_SRC
 
+*** DeepSeek
+- *Purpose*: Registers DeepSeek AI model configurations.
+- *Functionality*:
+  - Registers the `deepseek-chat` and `deepseek-reasoner` models with API key support.
+- *Usage*: Select "DeepSeek" as the AI backend.
+
+#+BEGIN_SRC emacs-lisp
+  (setq gptel-deepseek-backend
+        (gptel-make-openai "DeepSeek"
+          :key #'gptel-api-key-from-auth-source
+          :host "api.deepseek.com"
+          :models '("deepseek-chat" "deepseek-reasoner")))
+#+END_SRC
+
 *** Custom Helpers & Configuration
 - *Purpose*: Adds advanced interactive AI utilities and custom directives.
 - *Functionality*:
@@ -1204,6 +1218,7 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
            (choices '(("OpenAI" . gptel-openai-backend)
                       ("Gemini" . gptel-gemini-backend)
                       ("Mistral" . gptel-mistral-backend)
+                      ("DeepSeek" . gptel-deepseek-backend)
                       ("Copilot" . gptel-copilot-backend)))
            (selected-name (completing-read "Select AI Backend: " choices nil t))
            (backend-sym (cdr (assoc selected-name choices)))
@@ -1229,6 +1244,8 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
                       ("OpenAI (o4-mini)" . (,gptel-openai-backend . "o4-mini"))
                       ("Gemini (gemini-3.5-flash)" . (,gptel-gemini-backend . "gemini-3.5-flash"))
                       ("Mistral (mistral-large-latest)" . (,gptel-mistral-backend . "mistral-large-latest"))
+                      ("DeepSeek (deepseek-chat)" . (,gptel-deepseek-backend . "deepseek-chat"))
+                      ("DeepSeek (deepseek-reasoner)" . (,gptel-deepseek-backend . "deepseek-reasoner"))
                       ("Copilot Chat" . (,gptel-copilot-backend . nil))))
            (selected-key (completing-read "Select AI Backend: " choices nil t))
            (selected-val (cdr (assoc selected-key choices)))

@@ -659,6 +659,12 @@
         :host "api.mistral.ai"
         :models '("mistral-large-latest")))
 
+(setq gptel-deepseek-backend
+      (gptel-make-openai "DeepSeek"
+        :key #'gptel-api-key-from-auth-source
+        :host "api.deepseek.com"
+        :models '("deepseek-chat" "deepseek-reasoner")))
+
 (defun my/gptel-ensure-local-variables (backend-sym model)
   "Ensure standard Org/gptel local variables exist at the end of the buffer."
   (save-excursion
@@ -683,6 +689,7 @@
          (choices '(("OpenAI" . gptel-openai-backend)
                     ("Gemini" . gptel-gemini-backend)
                     ("Mistral" . gptel-mistral-backend)
+                    ("DeepSeek" . gptel-deepseek-backend)
                     ("Copilot" . gptel-copilot-backend)))
          (selected-name (completing-read "Select AI Backend: " choices nil t))
          (backend-sym (cdr (assoc selected-name choices)))
@@ -708,6 +715,8 @@ Prompts for the AI backend and model to use."
                     ("OpenAI (o4-mini)" . (,gptel-openai-backend . "o4-mini"))
                     ("Gemini (gemini-3.5-flash)" . (,gptel-gemini-backend . "gemini-3.5-flash"))
                     ("Mistral (mistral-large-latest)" . (,gptel-mistral-backend . "mistral-large-latest"))
+                    ("DeepSeek (deepseek-chat)" . (,gptel-deepseek-backend . "deepseek-chat"))
+                    ("DeepSeek (deepseek-reasoner)" . (,gptel-deepseek-backend . "deepseek-reasoner"))
                     ("Copilot Chat" . (,gptel-copilot-backend . nil))))
          (selected-key (completing-read "Select AI Backend: " choices nil t))
          (selected-val (cdr (assoc selected-key choices)))
