@@ -34,6 +34,13 @@
   (package-install 'use-package))
 (require 'use-package)
 
+;; Emacs < 30 has no native `:vc' support in use-package, provide it
+;; via vc-use-package. Emacs >= 30 supports `:vc' natively.
+(unless (>= emacs-major-version 30)
+  (unless (package-installed-p 'vc-use-package)
+    (package-vc-install "https://github.com/slotThe/vc-use-package"))
+  (require 'vc-use-package))
+
 ;; if we need to call debbuger on specific call
 ;;(debug-on-entry 'package-initialize)
 
@@ -808,8 +815,15 @@ Prompts for the AI backend and model to use."
   (my/get-eca-api-key)
   (call-interactively 'eca))
 
-(use-package eca
-  :vc (:url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest))
+;; `:vc' syntax depends on the Emacs version:
+;; - Emacs >= 30: native use-package `:vc' takes a plain plist
+;; - Emacs <  30: vc-use-package expects (PACKAGE :url ... :rev ...)
+(if (>= emacs-major-version 30)
+    (use-package eca
+      :vc (:url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest))
+  (use-package eca
+    :vc (eca :url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest)))
+
 
 (defun reload-init-file ()
   (interactive)
@@ -831,3 +845,16 @@ Prompts for the AI backend and model to use."
 (ignore-errors (load "~/git/ma-cgr/ma-cgr.el"))
 
 (provide '.emacs)
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-vc-selected-packages
+   '((vc-use-package :vc-backend Git :url "https://github.com/slotThe/vc-use-package"))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )

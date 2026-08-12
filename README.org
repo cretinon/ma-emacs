@@ -77,10 +77,11 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :PROPERTIES:
 :CUSTOM_ID: pre-requisite
 :END:
-- *Purpose*: Prepares Emacs's package manager and ensures `use-package` is installed.
+- *Purpose*: Prepares Emacs's package manager, ensures `use-package` is installed, and provides `:vc` support on Emacs versions lacking it.
 - *Functionality*:
   - Sets up stable and unstable package archive repositories (ELPA, MELPA).
   - Installs `use-package` on first startup if missing.
+  - Loads `vc-use-package` (source installs) only on Emacs < 30, since Emacs >= 30 has native `:vc` support.
 - *Usage*: Automatically executed on Emacs initialization to bootstrap the package management system.
 
 #+BEGIN_SRC emacs-lisp
@@ -102,6 +103,13 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
     (package-refresh-contents)
     (package-install 'use-package))
   (require 'use-package)
+
+  ;; Emacs < 30 has no native `:vc' support in use-package, provide it
+  ;; via vc-use-package. Emacs >= 30 supports `:vc' natively.
+  (unless (>= emacs-major-version 30)
+    (unless (package-installed-p 'vc-use-package)
+      (package-vc-install "https://github.com/slotThe/vc-use-package"))
+    (require 'vc-use-package))
 #+END_SRC
 
 *** Debug use package
@@ -1317,7 +1325,7 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
 :END:
 - *Purpose*: Integrates ECA (Editor Code Assistant) AI client into Emacs with secure API key storage. See [[https://github.com/editor-code-assistant/eca-emacs][ECA Emacs Github]] or [[https://eca.dev][ECA Homepage]] for more details.
 - *Functionality*:
-  - Installs the `eca` package, allowing dynamic selection of the AI chat model.
+  - Installs the `eca` package from source with a `:vc` syntax chosen by Emacs version (plist form on >= 30, `(eca :url ...)` form with `vc-use-package` on < 30).
   - Automatically fetches the Google and DeepSeek API keys from encrypted `auth-source` on startup.
   - Defines an interactive `my/eca` wrapper to ensure API keys are prepared before running ECA.
 - *Usage*: Run `M-x my/eca` to start the Editor Code Assistant session with automatic authentication.
@@ -1351,8 +1359,14 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
     (my/get-eca-api-key)
     (call-interactively 'eca))
 
-  (use-package eca
-    :vc (:url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest))
+  ;; `:vc' syntax depends on the Emacs version:
+  ;; - Emacs >= 30: native use-package `:vc' takes a plain plist
+  ;; - Emacs <  30: vc-use-package expects (PACKAGE :url ... :rev ...)
+  (if (>= emacs-major-version 30)
+      (use-package eca
+        :vc (:url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest))
+    (use-package eca
+      :vc (eca :url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest)))
 #+END_SRC
 
 ** Usefull Key Binding
