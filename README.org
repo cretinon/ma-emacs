@@ -1295,7 +1295,7 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
 :END:
 - *Purpose*: Integrates ECA (Editor Code Assistant) AI client into Emacs with secure API key storage. See [[https://github.com/editor-code-assistant/eca-emacs][ECA Emacs Github]] or [[https://eca.dev][ECA Homepage]] for more details.
 - *Functionality*:
-  - Installs the `eca` package and sets the default AI model to `google/gemini-3.5-flash`.
+  - Installs the `eca` package, allowing dynamic selection of the AI chat model.
   - Automatically fetches the Google and DeepSeek API keys from encrypted `auth-source` on startup.
   - Defines an interactive `my/eca` wrapper to ensure API keys are prepared before running ECA.
 - *Usage*: Run `M-x my/eca` to start the Editor Code Assistant session with automatic authentication.
@@ -1330,9 +1330,7 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
     (call-interactively 'eca))
 
   (use-package eca
-    :vc (:url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest)
-    :custom
-    (eca-chat-custom-model "google/gemini-3.5-flash"))
+    :vc (:url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest))
 #+END_SRC
 
 ** Usefull Key Binding
