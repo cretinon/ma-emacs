@@ -1296,7 +1296,7 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
 - *Purpose*: Integrates ECA (Editor Code Assistant) AI client into Emacs with secure API key storage. See [[https://github.com/editor-code-assistant/eca-emacs][ECA Emacs Github]] or [[https://eca.dev][ECA Homepage]] for more details.
 - *Functionality*:
   - Installs the `eca` package and sets the default AI model to `google/gemini-3.5-flash`.
-  - Automatically fetches the Google API key from encrypted `auth-source` on startup.
+  - Automatically fetches the Google and DeepSeek API keys from encrypted `auth-source` on startup.
   - Defines an interactive `my/eca` wrapper to ensure API keys are prepared before running ECA.
 - *Usage*: Run `M-x my/eca` to start the Editor Code Assistant session with automatic authentication.
 
@@ -1313,7 +1313,14 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
           (let ((secret (plist-get match :secret)))
             (setenv "GOOGLE_API_KEY" (if (functionp secret)
                                             (funcall secret)
-                                          secret)))))))
+                                          secret))))))
+    (unless (getenv "DEEPSEEK_API_KEY")
+      (let ((match (car (auth-source-search :host "api.deepseek.com" :user "apikey"))))
+        (when match
+          (let ((secret (plist-get match :secret)))
+            (setenv "DEEPSEEK_API_KEY" (if (functionp secret)
+                                              (funcall secret)
+                                            secret)))))))
 
   ;; Wrap the interactive command so decrypt happens BEFORE eca command executes
   (defun my/eca ()

@@ -779,7 +779,14 @@ Prompts for the AI backend and model to use."
         (let ((secret (plist-get match :secret)))
           (setenv "GOOGLE_API_KEY" (if (functionp secret)
                                           (funcall secret)
-                                        secret)))))))
+                                        secret))))))
+  (unless (getenv "DEEPSEEK_API_KEY")
+    (let ((match (car (auth-source-search :host "api.deepseek.com" :user "apikey"))))
+      (when match
+        (let ((secret (plist-get match :secret)))
+          (setenv "DEEPSEEK_API_KEY" (if (functionp secret)
+                                            (funcall secret)
+                                          secret)))))))
 
 ;; Wrap the interactive command so decrypt happens BEFORE eca command executes
 (defun my/eca ()
