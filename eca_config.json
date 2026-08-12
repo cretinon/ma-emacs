@@ -1,0 +1,18 @@
+{
+  "providers": {
+    "google": {
+      "key": "${env:GOOGLE_API_KEY}"
+    },
+    "deepseek": {
+      "api": "openai-chat",
+      "url": "https://api.deepseek.com",
+      "key": "${env:DEEPSEEK_API_KEY}",
+      "models": {
+        "deepseek-chat": {},
+        "deepseek-coder": {},
+        "deepseek-reasoner": {}
+       }
+    }
+  },
+  "$schema": "https://eca.dev/config.json"
+}
