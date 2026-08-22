@@ -1,4 +1,5 @@
 {
+  "defaultModel": "deepseek/deepseek-v4-flash",
   "providers": {
     "google": {
       "key": "${env:GOOGLE_API_KEY}"
@@ -8,10 +9,9 @@
       "url": "https://api.deepseek.com",
       "key": "${env:DEEPSEEK_API_KEY}",
       "models": {
-        "deepseek-chat": {},
-        "deepseek-coder": {},
-        "deepseek-reasoner": {}
-       }
+        "deepseek-v4-flash": {},
+        "deepseek-v4-pro": {}
+      }
     }
   },
   "$schema": "https://eca.dev/config.json"
