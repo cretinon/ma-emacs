@@ -38,6 +38,7 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
     - [[#go-mode][Go mode]]
     - [[#csv-mode][Csv mode]]
     - [[#markdown-mode][Markdown mode]]
+    - [[#valign][Valign]]
     - [[#org-mode][Org mode]]
     - [[#pdf-mode][PDF mode]]
     - [[#plantuml-mode][PlantUML mode]]
@@ -648,6 +649,7 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 - *Functionality*:
   - Enables native syntax highlighting in fenced code blocks and hides markup symbols.
   - Associates `.md` files with `gfm-mode` and scales header fonts visually.
+  - Renders GFM tables with a visible background and recognizes simplified tables (no leading pipes, spaces in the delimiter row).
 - *Usage*: Opens automatically on `.md` files; press `C-c C-e` to execute markdown commands.
 
 #+BEGIN_SRC emacs-lisp
@@ -660,8 +662,35 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
           markdown-fontify-code-blocks-natively t  ;; Syntax highlight fenced code blocks
           markdown-hide-markup t                   ;; Hide **bold**, *italic*, and `code` markup tags
           markdown-header-scaling t)               ;; Visually scale header font sizes
+    :config
+    ;; Make GFM tables visibly render: markdown-table-face inherits
+    ;; markdown-code-face (plain fixed-pitch), which is invisible on dark themes
+    (set-face-attribute 'markdown-table-face nil
+                        :inherit 'fixed-pitch
+                        :background "#333333")
+    ;; Accept spaces/colons in GFM delimiter rows so simplified tables like
+    ;; "--- | ---" (without leading pipes) are recognized and rendered
+    (setq gfm-table-hline-regexp "^[ \t]*:*-+[ \t]*\\(|[ \t]*:*-+[ \t]*\\)+")
     :bind (:map markdown-mode-map
                 ("C-c C-e" . markdown-do))) ;; Keybinding for markdown-do
+#+END_SRC
+
+*** Valign
+:PROPERTIES:
+:CUSTOM_ID: valign
+:END:
+- *Purpose*: Renders GFM Markdown tables as aligned grids, hiding raw `|` and `-` markup.
+- *Functionality*:
+  - Draws table cells with aligned columns and box-drawing separators using overlays.
+  - Activates automatically in `gfm-mode` and `markdown-mode` buffers.
+- *Usage*: Automatic; tables appear as drawn grids while editing `.md` files.
+
+#+BEGIN_SRC emacs-lisp
+  ;; Valign: draw GFM Markdown tables as aligned grids (hides raw | and - markup)
+  (use-package valign
+    :ensure t
+    :hook ((gfm-mode . valign-mode)
+           (markdown-mode . valign-mode)))
 #+END_SRC
 
 *** Org mode

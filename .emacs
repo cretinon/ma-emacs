@@ -344,6 +344,12 @@
   :bind (:map markdown-mode-map
               ("C-c C-e" . markdown-do))) ;; Keybinding for markdown-do
 
+;; Valign: draw GFM Markdown tables as aligned grids (hides raw | and - markup)
+(use-package valign
+  :ensure t
+  :hook ((gfm-mode . valign-mode)
+         (markdown-mode . valign-mode)))
+
 ;; Configure Org-mode core settings and rendering
 (use-package org
   :custom
