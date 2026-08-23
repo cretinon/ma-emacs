@@ -175,6 +175,8 @@
 (tab-bar-mode 1)
 
 ;; Bind keys for navigating tabs easily
+(global-set-key (kbd "<f2>") 'tab-new)          ;; Bind F2 to create a new tab
+(global-set-key (kbd "<C-f2>") 'tab-close)      ;; Bind C-F2 to close current tab
 (global-set-key (kbd "<f3>") 'tab-previous)
 (global-set-key (kbd "<f4>") 'tab-next)
 

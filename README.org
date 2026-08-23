@@ -328,7 +328,7 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 - *Functionality*:
   - Displays active buffers/tabs in a clean top bar matching the current theme.
   - Adds shortcuts for quick navigation.
-- *Usage*: Use `F3` for previous tab and `F4` for next tab.
+- *Usage*: Use `F2` for a new tab, `C-F2` to close the current tab, `F3` for previous tab and `F4` for next tab.
 
 #+BEGIN_SRC emacs-lisp
   ;; Configure the tab bar appearance and behavior
@@ -357,6 +357,8 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 
 #+BEGIN_SRC emacs-lisp
   ;; Bind keys for navigating tabs easily
+  (global-set-key (kbd "<f2>") 'tab-new)          ;; Bind F2 to create a new tab
+  (global-set-key (kbd "<C-f2>") 'tab-close)      ;; Bind C-F2 to close current tab
   (global-set-key (kbd "<f3>") 'tab-previous)
   (global-set-key (kbd "<f4>") 'tab-next)
 #+END_SRC
