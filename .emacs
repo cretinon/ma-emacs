@@ -720,8 +720,10 @@ otherwise open Magit status with `magit-status'."
               "# End:\n"))))
 
 (defun my/gptel-with-backend-selection ()
-  "Start gptel-mode after prompting for backend selection and persisting it."
+  "Start gptel-mode after opening/creating a file and prompting for backend selection."
   (interactive)
+  ;; Prompt for a file first so the session is tied to a persistent buffer
+  (find-file (read-file-name "File to open or create: "))
   (let* (;; Store the actual variable symbols instead of evaluating them immediately
          (choices '(("OpenAI" . gptel-openai-backend)
                     ("Gemini" . gptel-gemini-backend)
@@ -742,6 +744,7 @@ otherwise open Magit status with `magit-status'."
     ;; Write them to the file-local variables so they persist on save/reopen
     (my/gptel-ensure-local-variables backend-sym model)
     (gptel-mode 1)))
+(global-set-key (kbd "<f8>") 'my/gptel-with-backend-selection)  ;; Bind F8 to gptel backend selection
 
 (defun my/gptel-review-code ()
   "Review selected code or current buffer in a split window.
