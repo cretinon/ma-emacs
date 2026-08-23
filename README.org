@@ -1009,7 +1009,7 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :CUSTOM_ID: magit
 :END:
 
-Specificity : open magit-status using =F6= and some bufffers are sticky
+Specificity : toggle magit-status using =F6=; toggling off deletes the Magit status window
 
 #+BEGIN_SRC emacs-lisp
 ;; Magit configuration for Git integration
@@ -1115,8 +1115,28 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
 (advice-add 'magit-push :after #'my-git-gutter-refresh-after-push)
 
 
-;; Key binding for quick access to Magit status
-(global-set-key (kbd "<f6>") 'magit)  ;; Bind F6 to invoke Magit
+;; Key binding to toggle Magit status view
+(defun my/magit-toggle ()
+  "Toggle the Magit status buffer.
+If a Magit status buffer is visible, delete its window(s);
+otherwise open Magit status with `magit-status'."
+  (interactive)
+  (let ((buf nil))
+    (dolist (b (buffer-list))
+      (when (and (null buf)
+                 (with-current-buffer b
+                   (derived-mode-p 'magit-status-mode)))
+        (setq buf b)))
+    (if (and buf (get-buffer-window buf t))
+        ;; Delete the Magit status window(s) so the window layout is
+        ;; fully restored; `quit-windows-on' would only bury the buffer
+        ;; and leave the window open showing the previous buffer.
+        (let ((windows (get-buffer-window-list buf nil t)))
+          (dolist (w windows)
+            (when (> (length (window-list (window-frame w))) 1)
+              (delete-window w))))
+      (magit-status))))
+(global-set-key (kbd "<f6>") 'my/magit-toggle)  ;; Bind F6 to toggle Magit
 
 ;; Allow Magit to search in authinfo for user/password
 (add-hook 'magit-process-find-password-functions
@@ -1357,7 +1377,7 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
   - Installs the `eca` package from source with a `:vc` syntax chosen by Emacs version (plist form on >= 30, `(eca :url ...)` form with `vc-use-package` on < 30).
   - Automatically fetches the Google and DeepSeek API keys from encrypted `auth-source` on startup.
   - Defines an interactive `my/eca` wrapper to ensure API keys are prepared before running ECA.
-- *Usage*: Run `M-x my/eca` to start the Editor Code Assistant session with automatic authentication.
+- *Usage*: Run `M-x my/eca` or press `F7` to toggle the Editor Code Assistant chat view with automatic authentication.
 
 #+BEGIN_SRC emacs-lisp
   ;; eca
@@ -1387,6 +1407,23 @@ Specificity : open magit-status using =F6= and some bufffers are sticky
     (interactive)
     (my/get-eca-api-key)
     (call-interactively 'eca))
+
+  ;; Key binding to toggle ECA chat view
+  (defun my/eca-toggle ()
+    "Toggle the ECA chat buffer visibility.
+If an ECA chat buffer is visible, delete its window(s);
+otherwise invoke `my/eca' to start or switch to the ECA session."
+    (interactive)
+    (let ((buf nil))
+      (dolist (b (buffer-list))
+        (when (and (null buf)
+                   (string-prefix-p "<eca-chat[" (buffer-name b))
+                   (not (string-suffix-p ":closed>" (buffer-name b))))
+          (setq buf b)))
+      (if (and buf (get-buffer-window buf t))
+          (quit-windows-on buf)
+        (my/eca))))
+  (global-set-key (kbd "<f7>") 'my/eca-toggle)  ;; Bind F7 to toggle ECA
 
   ;; `:vc' syntax depends on the Emacs version:
   ;; - Emacs >= 30: native use-package `:vc' takes a plain plist
