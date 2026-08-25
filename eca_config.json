@@ -14,5 +14,14 @@
       }
     }
   },
+  "mcpServers": {
+    "mcp-bash": {
+      "command": "/root/git/mcp/mcp_server.sh",
+      "args": [],
+      "env": {
+        "MY_GIT_DIR": "/root/git"
+      }
+    }
+  },
   "$schema": "https://eca.dev/config.json"
 }
