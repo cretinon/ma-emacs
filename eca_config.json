@@ -27,7 +27,21 @@
   "toolCall": {
     "approval": {
       "allow": {
-        "mcp-bash": {}
+        "mcp-bash": {},
+        "eca__git": {},
+        "eca__read_file": {
+          "argsMatchers": {
+            "path": ["/root/git/.*"]
+          }
+        }
+      },
+      "deny": {
+        "eca__git": {
+          "argsMatchers": {
+            "command": [".*\\bgit\\s+push\\b.*"],
+            "operation": ["push"]
+          }
+        }
       }
     }
   },
