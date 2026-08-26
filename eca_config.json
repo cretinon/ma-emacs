@@ -22,12 +22,21 @@
         "MY_GIT_DIR": "/root/git",
         "DEBUG": "true"
       }
+    },
+    "storm-mcp": {
+      "command": "/root/git/storm/storm-mcp.sh",
+      "args": [],
+      "env": {
+        "MY_GIT_DIR": "/root/git",
+        "DEBUG": "true"
+      }
     }
   },
   "toolCall": {
     "approval": {
       "allow": {
         "mcp-bash": {},
+        "storm-mcp": {},
         "eca__git": {},
         "eca__read_file": {
           "argsMatchers": {
