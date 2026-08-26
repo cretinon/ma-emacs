@@ -868,7 +868,7 @@ otherwise invoke `my/eca' to start or switch to the ECA session."
 ;; - Emacs <  30: vc-use-package expects (PACKAGE :url ... :rev ...)
 (if (>= emacs-major-version 30)
     (use-package eca
-      :vc (eca "https://github.com/editor-code-assistant/eca-emacs" :rev :newest))
+      :vc (:url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest))
   (use-package eca
     :vc (eca :url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest)))
 
