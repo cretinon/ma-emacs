@@ -47,7 +47,7 @@
 ;; if we need to refresh melpa pkg list
 ;;(package-refresh-contents)
 
-;; Load and activate the Cyberpunk theme
+;; Load the custom file (redirected saves from `customize')
 (setq custom-file "~/.emacs.custom")
 (load custom-file)
 
@@ -55,7 +55,21 @@
 (use-package cyberpunk-theme
   :ensure t
   :init
-  (load-theme 'cyberpunk t))
+  (load-theme 'cyberpunk t)
+  ;; Preserve terminal transparency: themes set an opaque default background
+  ;; which hides the terminal emulator's transparent background.  That opaque
+  ;; background is re-applied by the terminal frame's face setup at the end of
+  ;; startup, so re-apply transparency afterwards and after every theme load
+  ;; (e.g. when switching themes with consult-theme).
+  (defun my/preserve-terminal-transparency ()
+    "Keep the terminal background transparent in non-graphical frames."
+    (unless (display-graphic-p)
+      (set-face-background 'default "unspecified-bg")
+      (set-frame-parameter nil 'background-color "unspecified-bg")))
+  (add-hook 'after-load-theme-hook #'my/preserve-terminal-transparency)
+  (add-hook 'window-setup-hook #'my/preserve-terminal-transparency 90)
+  (add-hook 'tty-setup-hook #'my/preserve-terminal-transparency 90)
+  (my/preserve-terminal-transparency))
 
 ;; Disable unnecessary UI elements
 (tool-bar-mode -1)   ;; Disable the tool bar
@@ -201,10 +215,14 @@
       ;; Map function keys and navigation keys for terminal compatibility
       (define-key input-decode-map "\e[H" [home])
       (define-key input-decode-map "\e[F" [end])
-      (define-key input-decode-map "\e[D" [S-left])
-      (define-key input-decode-map "\e[C" [S-right])
-      (define-key input-decode-map "\e[A" [S-up])
-      (define-key input-decode-map "\e[B" [S-down])
+      ;; NOTE: do NOT remap "\e[A"/"\e[B"/"\e[C"/"\e[D" (plain Up/Down/Right/
+      ;; Left in xterm/SCO mode) to S-up/S-down/S-right/S-left: with
+      ;; `shift-select-mode' enabled (Emacs default) every arrow press then
+      ;; acts as Shift+arrow, so moving the cursor extends the region and
+      ;; text gets selected.  Emacs already maps these sequences to plain
+      ;; arrows by default.  If you really need Shift+arrows from PuTTY,
+      ;; the xterm sequences are "\e[1;2A" (S-up), "\e[1;2B" (S-down),
+      ;; "\e[1;2C" (S-right), "\e[1;2D" (S-left).
       (define-key input-decode-map "\e[I" [prior])
       (define-key input-decode-map "\e[G" [next])
       (define-key input-decode-map "\e[M" [f1])

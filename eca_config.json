@@ -17,6 +17,17 @@
         "deepseek-v4-flash": {},
         "deepseek-v4-pro": {}
       }
+    },
+    "ollama": {
+      "api": "openai-chat",
+      "url": "http://localhost:11434",
+      "completionUrlRelativePath": "/v1/chat/completions",
+      "httpClient": {
+        "version": "http-1.1"
+      },
+      "models": {
+          "gemma2:2b": {}
+      }
     }
   },
   "mcpServers": {
