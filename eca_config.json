@@ -3,6 +3,9 @@
   "rules": [
     {
       "path": "~/.config/eca/rules/language.md"
+    },
+    {
+      "path": "~/.config/eca/rules/AI_dev.md"
     }
   ],
   "providers": {
