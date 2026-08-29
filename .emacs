@@ -56,20 +56,53 @@
   :ensure t
   :init
   (load-theme 'cyberpunk t)
-  ;; Preserve terminal transparency: themes set an opaque default background
-  ;; which hides the terminal emulator's transparent background.  That opaque
-  ;; background is re-applied by the terminal frame's face setup at the end of
-  ;; startup, so re-apply transparency afterwards and after every theme load
-  ;; (e.g. when switching themes with consult-theme).
-  (defun my/preserve-terminal-transparency ()
-    "Keep the terminal background transparent in non-graphical frames."
-    (unless (display-graphic-p)
-      (set-face-background 'default "unspecified-bg")
-      (set-frame-parameter nil 'background-color "unspecified-bg")))
-  (add-hook 'after-load-theme-hook #'my/preserve-terminal-transparency)
-  (add-hook 'window-setup-hook #'my/preserve-terminal-transparency 90)
-  (add-hook 'tty-setup-hook #'my/preserve-terminal-transparency 90)
-  (my/preserve-terminal-transparency))
+  ;; Focus-based background transparency: the active frame is transparent
+  ;; (80% opacity) and inactive frames are opaque (100%).
+  ;; - Graphical frames: use the native `alpha' frame parameter
+  ;;   (ACTIVE . INACTIVE) => (80 . 100), handled by Emacs/window manager.
+  ;; - Terminal frames: Emacs cannot set an opacity level, so it switches the
+  ;;   default face background between "unspecified-bg" (focused: the terminal
+  ;;   emulator's own transparency shows through; set e.g. PuTTY opacity to
+  ;;   80%) and the theme's opaque background (unfocused: 100%).  Tty focus
+  ;;   detection relies on xterm focus events ("\e[I"/"\e[O"); note that
+  ;;   PuTTY in SCO mode remaps those bytes to PgUp/F3, so focus reporting may
+  ;;   be unavailable there.
+  ;; See https://www.gnu.org/software/emacs/manual/html_node/emacs/Frame-Parameters.html
+  (defvar my/opaque-terminal-bg nil
+    "Opaque background applied to unfocused terminal frames.")
+  (defun my/capture-opaque-background ()
+    "Remember the current theme's opaque background color."
+    (let ((bg (face-background 'default nil 'default)))
+      (unless (member bg '(nil "unspecified-bg"))
+        (setq my/opaque-terminal-bg bg))))
+  (defun my/update-terminal-transparency ()
+    "Set transparent background on focused tty frames, opaque on others."
+    (dolist (f (frame-list))
+      (unless (display-graphic-p f)
+        (if (memq (frame-focus-state f) '(t unknown))
+            (progn
+              (set-face-background 'default "unspecified-bg" f)
+              (set-frame-parameter f 'background-color "unspecified-bg"))
+          (set-face-background 'default (or my/opaque-terminal-bg "black") f)
+          (set-frame-parameter f 'background-color
+                               (or my/opaque-terminal-bg "black"))))))
+  (defun my/set-gui-frame-alpha (frame)
+    "Set FRAME opacity to 90% when focused, 10% when not."
+    (when (display-graphic-p frame)
+      (set-frame-parameter frame 'alpha '(85 . 10))))
+  (declare-function my/capture-opaque-background nil "")
+  (declare-function my/update-terminal-transparency nil "")
+  (declare-function my/set-gui-frame-alpha nil "(frame)")
+  (add-hook 'after-load-theme-hook #'my/capture-opaque-background)
+  (add-hook 'after-load-theme-hook #'my/update-terminal-transparency)
+  (add-hook 'window-setup-hook #'my/update-terminal-transparency 90)
+  (add-hook 'tty-setup-hook #'my/update-terminal-transparency 90)
+  (add-function :after after-focus-change-function
+                #'my/update-terminal-transparency)
+  (add-hook 'after-make-frame-functions #'my/set-gui-frame-alpha)
+  (my/capture-opaque-background)
+  (my/update-terminal-transparency)
+  (my/set-gui-frame-alpha (selected-frame)))
 
 ;; Disable unnecessary UI elements
 (tool-bar-mode -1)   ;; Disable the tool bar
