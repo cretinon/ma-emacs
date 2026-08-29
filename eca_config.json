@@ -56,7 +56,22 @@
         "eca__git": {},
         "eca__read_file": {
           "argsMatchers": {
-            "path": ["/root/git/.*"]
+              "path": ["/root/git/.*", "/root/.cache/.*", "/tmp/.*"]
+          }
+        },
+        "eca__grep": {
+          "argsMatchers": {
+              "path": ["/root/git/.*", "/root/.cache/.*", "/tmp/.*"]
+          }
+        },
+        "eca__write_file": {
+          "argsMatchers": {
+              "path": ["/root/git/.*", "/root/.cache/.*", "/tmp/.*"]
+          }
+        },
+        "eca__edit_file": {
+          "argsMatchers": {
+              "path": ["/root/git/.*", "/root/.cache/.*", "/tmp/.*"]
           }
         }
       },
