@@ -272,7 +272,45 @@
       (define-key input-decode-map "\e[X" [f12])
       (define-key input-decode-map "\e[j" [S-f12])
       (define-key input-decode-map "\e[v" [C-f12])
-      (define-key input-decode-map "\e\e[X" [M-f12])))
+      (define-key input-decode-map "\e\e[X" [M-f12])
+
+      ;; M-arrow selection (terminal workaround)
+      ;; PuTTY/SCO cannot distinguish Shift+arrow from plain arrow (both send
+      ;; "\e[A"/"\e[B"/"\e[C"/"\e[D"), so Shift+arrow selection is unavailable
+      ;; in the terminal.  Alt+arrow sends a distinct sequence (ESC + arrow),
+      ;; which Emacs decodes as M-<left>/M-<right>/M-<up>/M-<down>.  Bind those
+      ;; to selection commands: the first press activates the region at point,
+      ;; subsequent presses move point so the region extends, mimicking the
+      ;; Shift+arrow behaviour of `shift-select-mode'.  Word movement stays
+      ;; available on C-<left>/C-<right> (or M-f/M-b).
+      ;; See https://www.gnu.org/software/emacs/manual/html_node/emacs/Mark.html
+      (defun my/select-with-arrow (move-fn arg)
+        "Move point with MOVE-FN, extending the active region if any."
+        (unless (region-active-p)
+          (push-mark (point) nil t))
+        (funcall move-fn arg))
+      (declare-function my/select-with-arrow nil "(move-fn arg)")
+      (unless (display-graphic-p)
+        (defun my/select-left (&optional arg)
+          "Select one character to the left (repeat to extend)."
+          (interactive "p")
+          (my/select-with-arrow #'left-char arg))
+        (defun my/select-right (&optional arg)
+          "Select one character to the right (repeat to extend)."
+          (interactive "p")
+          (my/select-with-arrow #'right-char arg))
+        (defun my/select-up (&optional arg)
+          "Select one line upward (repeat to extend)."
+          (interactive "p")
+          (my/select-with-arrow #'previous-line arg))
+        (defun my/select-down (&optional arg)
+          "Select one line downward (repeat to extend)."
+          (interactive "p")
+          (my/select-with-arrow #'next-line arg))
+        (global-set-key (kbd "M-<left>") 'my/select-left)
+        (global-set-key (kbd "M-<right>") 'my/select-right)
+        (global-set-key (kbd "M-<up>") 'my/select-up)
+        (global-set-key (kbd "M-<down>") 'my/select-down))))
 
 ;; Use xterm-color for proper ANSI color support in compilation buffers
 (use-package xterm-color
