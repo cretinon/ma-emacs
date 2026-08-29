@@ -58,6 +58,11 @@
         "mcp-bash": {},
         "storm-mcp": {},
         "eca__git": {},
+        "eca__shell_command": {
+          "argsMatchers": {
+            "command": [".*my_warp\\.sh.*--lib mcp.*-[sbk].*"]
+          }
+        },
         "eca__read_file": {
           "argsMatchers": {
               "path": ["/root/git/.*", "/root/.cache/.*", "/tmp/.*"]
