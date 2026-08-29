@@ -481,6 +481,17 @@
     :hook (org-mode . org-pdftools-setup-link)))
 (add-to-list 'auto-mode-alist '("\\.[pP][dD][fF]\\'" . pdf-view-mode)) ;; Associate PDF files with pdf-view-mode
 
+;; w3m: browse URLs directly inside Emacs
+;; Provided by the Debian `w3m-el' package (apt install w3m w3m-el w3m-img);
+;; NOT available on MELPA, so no `:ensure t'.
+(use-package w3m
+  :init
+  (setq browse-url-browser-function 'w3m-browse-url)
+  :custom
+  (w3m-use-cookies t)
+  (w3m-default-display-inline-images t)
+  :bind (("C-c w" . w3m-browse-url)))
+
 ;; PlantUML mode
 ;; prerequisite is to have downloaded plantuml.jar at https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar
 (use-package plantuml-mode

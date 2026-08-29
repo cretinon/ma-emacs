@@ -41,6 +41,7 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
     - [[#valign][Valign]]
     - [[#org-mode][Org mode]]
     - [[#pdf-mode][PDF mode]]
+    - [[#w3m][w3m]]
     - [[#plantuml-mode][PlantUML mode]]
     - [[#all-mode][All mode]]
   - [[#code-completion][Code completion]]
@@ -854,6 +855,29 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
       :ensure t
       :hook (org-mode . org-pdftools-setup-link)))
   (add-to-list 'auto-mode-alist '("\\.[pP][dD][fF]\\'" . pdf-view-mode)) ;; Associate PDF files with pdf-view-mode
+#+END_SRC
+
+*** w3m
+:PROPERTIES:
+:CUSTOM_ID: w3m
+:END:
+- *Purpose*: Browsing URLs directly inside Emacs with the w3m text web browser.
+- *Functionality*:
+  - Installs the `w3m` package and makes it the default browser for `browse-url`.
+  - Enables cookies and inline images in w3m.
+- *Usage*: Press `C-c w` to open a URL; place the cursor on a link and run `M-x browse-url-at-point` to open it in w3m.
+
+#+BEGIN_SRC emacs-lisp
+  ;; w3m: browse URLs directly inside Emacs
+  ;; Provided by the Debian `w3m-el' package (apt install w3m w3m-el w3m-img);
+  ;; NOT available on MELPA, so no `:ensure t'.
+  (use-package w3m
+    :init
+    (setq browse-url-browser-function 'w3m-browse-url)
+    :custom
+    (w3m-use-cookies t)
+    (w3m-default-display-inline-images t)
+    :bind (("C-c w" . w3m-browse-url)))
 #+END_SRC
 
 *** PlantUML mode
