@@ -26,7 +26,8 @@
         "version": "http-1.1"
       },
       "models": {
-          "gemma2:2b": {}
+          "gemma2:2b": {},
+          "qwen2.5-coder:7b": {}
       }
     }
   },
