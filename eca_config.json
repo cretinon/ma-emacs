@@ -2,10 +2,16 @@
   "defaultModel": "deepseek/deepseek-v4-flash",
   "rules": [
     {
-      "path": "~/.config/eca/rules/language.md"
-    },
+      "path": "~/git/agents/rules/shell.md"
+    }
+    ,
     {
-      "path": "~/.config/eca/rules/AI_dev.md"
+      "path": "~/git/agents/rules/bats.md"
+    }
+  ],
+  "skills": [
+    {
+      "path": "~/git/agents/skills/bats"
     }
   ],
   "providers": {
