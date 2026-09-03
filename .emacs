@@ -939,29 +939,52 @@ Prompts for the AI backend and model to use."
                                             (funcall secret)
                                           secret)))))))
 
+;; Define additional workspace paths you want to include
+(defvar my/eca-extra-workspaces
+  '("~/git/mcp/"
+    "~/git/agents/"
+    "~/git/ma-emacs/"
+    "~/git/shell/"
+    "~/git/storm/"
+    "~/.cache/"
+    "~/.config/eca/"
+    "/tmp/"
+    "~/.emacs.d/")
+  "List of additional workspace directories to attach to ECA sessions.")
+
+(defun my/eca-attach-extra-workspaces ()
+  "Attach `my/eca-extra-workspaces' to the current ECA session."
+  (when-let ((session (eca-session)))
+    (dolist (dir my/eca-extra-workspaces)
+      (let ((expanded-dir (expand-file-name dir)))
+        (when (file-directory-p expanded-dir)
+          (eca--session-add-workspace-folder session expanded-dir))))))
+
 ;; Wrap the interactive command so decrypt happens BEFORE eca command executes
 (defun my/eca ()
   "Decrypt authinfo key first, then launch ECA."
   (interactive)
   (my/get-eca-api-key)
-  (call-interactively 'eca))
+  (call-interactively 'eca)
+  (my/eca-attach-extra-workspaces))
 
-  ;; Key binding to toggle ECA chat view
-  (defun my/eca-toggle ()
-    "Toggle the ECA chat buffer visibility.
+;; Key binding to toggle ECA chat view
+(defun my/eca-toggle ()
+  "Toggle the ECA chat buffer visibility.
 If an ECA chat buffer is visible, delete its window(s);
 otherwise invoke `my/eca' to start or switch to the ECA session."
-    (interactive)
-    (let ((buf nil))
-      (dolist (b (buffer-list))
-        (when (and (null buf)
-                   (string-prefix-p "<eca-chat[" (buffer-name b))
-                   (not (string-suffix-p ":closed>" (buffer-name b))))
-          (setq buf b)))
-      (if (and buf (get-buffer-window buf t))
-          (quit-windows-on buf)
-        (my/eca))))
-  (global-set-key (kbd "<f7>") 'my/eca-toggle)  ;; Bind F7 to toggle ECA
+  (interactive)
+  (let ((buf nil))
+    (dolist (b (buffer-list))
+      (when (and (null buf)
+                 (string-prefix-p "<eca-chat[" (buffer-name b))
+                 (not (string-suffix-p ":closed>" (buffer-name b))))
+        (setq buf b)))
+    (if (and buf (get-buffer-window buf t))
+        (quit-windows-on buf)
+      (my/eca))))
+
+(global-set-key (kbd "<f7>") 'my/eca-toggle)  ;; Bind F7 to toggle ECA
 
 ;; `:vc' syntax depends on the Emacs version:
 ;; - Emacs >= 30: native use-package `:vc' takes a plain plist
@@ -971,7 +994,6 @@ otherwise invoke `my/eca' to start or switch to the ECA session."
       :vc (:url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest))
   (use-package eca
     :vc (eca :url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest)))
-
 
 (defun reload-init-file ()
   (interactive)
