@@ -806,6 +806,35 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
            (markdown-mode . valign-mode)))
 #+END_SRC
 
+*** English spell check
+:PROPERTIES:
+:CUSTOM_ID: english-spell-check
+:END:
+- *Purpose*: Always-on English spell checking while typing, to help improve English writing.
+- *Functionality*:
+  - Runs `flyspell-mode` in all text buffers (Org, Markdown, message, ...) with the `aspell` `en_US` dictionary forced.
+  - Checks comments, strings, and docstrings in code buffers via `flyspell-prog-mode`.
+  - Skips Org links, timestamps, and code blocks using Org's own predicate.
+- *Usage*: Automatic; fix an underlined word with `C-c $` (suggestions) or complete with `M-TAB`.
+
+#+BEGIN_SRC emacs-lisp
+  ;; English spell checking with aspell (flyspell)
+  (setq ispell-program-name "aspell"   ; spell backend
+        ispell-dictionary "en_US")     ; always check English (even if LANG changes)
+
+  ;; Check spelling on the fly in every text buffer (org, markdown, message, ...)
+  (add-hook 'text-mode-hook #'flyspell-mode)
+
+  ;; Also check comments/strings/docstrings in code buffers
+  (add-hook 'prog-mode-hook #'flyspell-prog-mode)
+
+  ;; In Org, skip links, timestamps, code blocks (Org's own predicate)
+  (add-hook 'org-mode-hook
+            (lambda ()
+              (setq-local flyspell-generic-check-word-predicate
+                          #'org-mode-flyspell-verify)))
+#+END_SRC
+
 *** Org mode
 :PROPERTIES:
 :CUSTOM_ID: org-mode

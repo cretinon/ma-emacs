@@ -453,6 +453,22 @@
   :hook ((gfm-mode . valign-mode)
          (markdown-mode . valign-mode)))
 
+;; English spell checking with aspell (flyspell)
+(setq ispell-program-name "aspell"   ; spell backend
+      ispell-dictionary "en_US")     ; always check English (even if LANG changes)
+
+;; Check spelling on the fly in every text buffer (org, markdown, message, ...)
+(add-hook 'text-mode-hook #'flyspell-mode)
+
+;; Also check comments/strings/docstrings in code buffers
+(add-hook 'prog-mode-hook #'flyspell-prog-mode)
+
+;; In Org, skip links, timestamps, code blocks (Org's own predicate)
+(add-hook 'org-mode-hook
+          (lambda ()
+            (setq-local flyspell-generic-check-word-predicate
+                        #'org-mode-flyspell-verify)))
+
 ;; Configure Org-mode core settings and rendering
 
 ;; Load org-faces to make sure we can set appropriate faces
