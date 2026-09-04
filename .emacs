@@ -122,7 +122,7 @@
 
 ;; NOTE: These settings might not be ideal for your machine, tweak them as needed!
 (set-face-attribute 'default nil :font my/fixed-width-font :weight 'light :height 180)
-(set-face-attribute 'fixed-pitch nil :font my/fixed-width-font :weight 'light :height 190)
+(set-face-attribute 'fixed-pitch nil :font my/fixed-width-font :weight 'light :height 1.0)
 (set-face-attribute 'variable-pitch nil :font my/variable-width-font :weight 'light :height 1.3)
 
 ;; rezise both text and status bar when CTRL + mouse wheel
