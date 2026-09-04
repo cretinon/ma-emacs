@@ -483,6 +483,24 @@
 (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
 (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
 
+;; Fold all drawers (PROPERTIES/LOGBOOK) when an Org buffer is opened,
+;; and again after a save (org-make-toc may re-insert or reveal them)
+(defun my/org-fold-drawers ()
+  "Fold all drawers (PROPERTIES/LOGBOOK) in the current Org buffer."
+  (org-cycle-hide-drawers 'all))
+(defun my/org-fold-drawers-after-save ()
+  "Re-fold drawers after a save in Org buffers."
+  (when (derived-mode-p 'org-mode)
+    (my/org-fold-drawers)))
+(add-hook 'org-mode-hook #'my/org-fold-drawers)
+(add-hook 'after-save-hook #'my/org-fold-drawers-after-save)
+
+;; Render Org property drawers at half the default font size
+;; (:PROPERTIES:/:END: delimiters and the :KEY: value lines between them)
+(set-face-attribute 'org-drawer nil :height 0.5)
+(set-face-attribute 'org-special-keyword nil :height 0.5)
+(set-face-attribute 'org-property-value nil :height 0.5)
+
 ;;; Centering Org Documents --------------------------------
 
 ;; Install visual-fill-column
