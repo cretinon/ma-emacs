@@ -458,15 +458,16 @@
 ;; Load org-faces to make sure we can set appropriate faces
 (require 'org-faces)
 
-;; Resize Org headings
-(dolist (face '((org-level-1 . 1.2)
-                (org-level-2 . 1.1)
-                (org-level-3 . 1.05)
-                (org-level-4 . 1.0)
-                (org-level-5 . 1.1)
-                (org-level-6 . 1.1)
-                (org-level-7 . 1.1)
-                (org-level-8 . 1.1)))
+;; Resize Org headings (scale factors mirror `markdown-header-scaling-values'
+;; so Org level N matches Markdown level N)
+(dolist (face '((org-level-1 . 2.0)
+                (org-level-2 . 1.7)
+                (org-level-3 . 1.4)
+                (org-level-4 . 1.1)
+                (org-level-5 . 1.0)
+                (org-level-6 . 1.0)
+                (org-level-7 . 1.0)
+                (org-level-8 . 1.0)))
   (set-face-attribute (car face) nil :font my/variable-width-font :weight 'medium :height (cdr face)))
 
 ;; Make the document title a bit bigger
@@ -561,18 +562,18 @@
 (add-hook 'org-present-mode-quit-hook 'my/org-present-end)
 (add-hook 'org-present-after-navigate-functions 'my/org-present-prepare-slide)
 
-;; (use-package org
-;;   :custom
-;;   (org-hide-emphasis-markers t)
-;;   :config
-;;   ;; Ensure code and verbatim text are distinct when markers are hidden
-;;   (set-face-attribute 'org-code nil
-;;                       :inherit 'fixed-pitch
-;;                       :foreground "#ff79c6")
-;;   (set-face-attribute 'org-verbatim nil
-;;                       :inherit 'fixed-pitch
-;;                       :foreground "#f1fa8c"))
-
+(use-package org
+  :custom
+  (org-hide-emphasis-markers t)
+  (org-hide-leading-stars t)
+  :config
+  ;; Ensure code and verbatim text are distinct when markers are hidden
+  (set-face-attribute 'org-code nil
+                      :inherit 'fixed-pitch
+                      :foreground "#ff79c6")
+  (set-face-attribute 'org-verbatim nil
+                      :inherit 'fixed-pitch
+                      :foreground "#f1fa8c"))
 (defun my/org-toggle-emphasis-markers ()
   "Toggle hiding of Org emphasis markers."
   (interactive)
