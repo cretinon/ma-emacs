@@ -1156,11 +1156,8 @@ otherwise invoke `my/eca' to start or switch to the ECA session."
 ;; `:vc' syntax depends on the Emacs version:
 ;; - Emacs >= 30: native use-package `:vc' takes a plain plist
 ;; - Emacs <  30: vc-use-package expects (PACKAGE :url ... :rev ...)
-(if (>= emacs-major-version 30)
-    (use-package eca
-      :vc (:url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest))
-  (use-package eca
-    :vc (eca :url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest)))
+(use-package eca
+  :vc (:url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest))
 
 (defun reload-init-file ()
   (interactive)
