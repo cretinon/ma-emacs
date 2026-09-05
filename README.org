@@ -295,7 +295,12 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
   (let* ((old-default-height (face-attribute 'default :height))
          (new-default-height (+ old-default-height delta))
          (old-ml-height (face-attribute 'mode-line :height))
-         (base-ml-height (if (numberp old-ml-height) old-ml-height 100))
+         ;; A mode-line whose :height is unspecified (not a number) follows
+         ;; the default face, so its effective height is the default's.
+         ;; Anchoring on that value (instead of a guessed constant) keeps
+         ;; zoom-out/zoom-in symmetric: after one C-wheel-down then one
+         ;; C-wheel-up the status-bar text returns to its original size.
+         (base-ml-height (if (numberp old-ml-height) old-ml-height old-default-height))
          (new-ml-height (+ base-ml-height delta))
          (new-pad (max 1 (/ new-ml-height 40))))
 
