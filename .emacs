@@ -482,6 +482,11 @@
     (flyspell-mode -1)))
 (add-hook 'eca-chat-mode-hook #'my/eca-chat-disable-flyspell)
 
+;; set comments smaller
+(custom-set-faces
+ '(font-lock-comment-face ((t (:height 0.75 :slant italic)))))
+
+
 ;; Configure Org-mode core settings and rendering
 
 ;; Load org-faces to make sure we can set appropriate faces
