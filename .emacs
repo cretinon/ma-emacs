@@ -107,8 +107,8 @@
 ;; Disable unnecessary UI elements
 (tool-bar-mode -1)   ;; Disable the tool bar
 (scroll-bar-mode -1) ;; Disable the scroll bar
-(menu-bar-mode 1)    ;; Enable the menu bar
-(tab-line-mode 1)    ;; Enable the tab line
+(menu-bar-mode 0)    ;; Disable the menu bar
+(tab-line-mode 0)    ;; Disable the tab line
 (transient-mark-mode 1) ;; Enable transient mark mode for visual feedback in selections
 (setq-default inhibit-splash-screen t) ;; Prevent the splash screen from appearing at startup
 (fset 'yes-or-no-p 'y-or-n-p) ;; Replace yes/no prompts with y/n for convenience
@@ -236,7 +236,7 @@
 
 ;; Activate the tab bar mode and sync its appearance with the theme
 (my/sync-tab-bar-to-theme)
-(tab-bar-mode 1)
+(tab-bar-mode 0)
 
 ;; Bind keys for navigating tabs easily
 (global-set-key (kbd "<f2>") 'tab-new)          ;; Bind F2 to create a new tab
@@ -474,6 +474,14 @@
             (setq-local flyspell-generic-check-word-predicate
                         #'org-mode-flyspell-verify)))
 
+;; ECA chat buffers derive from gfm-mode (a text mode), so keep flyspell
+;; (aspell) off while chatting with the assistant.
+(defun my/eca-chat-disable-flyspell ()
+  "Turn flyspell off when the current buffer is an ECA chat buffer."
+  (when (derived-mode-p 'eca-chat-mode)
+    (flyspell-mode -1)))
+(add-hook 'eca-chat-mode-hook #'my/eca-chat-disable-flyspell)
+
 ;; Configure Org-mode core settings and rendering
 
 ;; Load org-faces to make sure we can set appropriate faces
@@ -575,9 +583,9 @@
 (defun my/org-present-end ()
   (tool-bar-mode -1)   ;; Disable the tool bar
   (scroll-bar-mode -1) ;; Disable the scroll bar
-  (menu-bar-mode 1)    ;; Enable the menu bar
-  (tab-bar-mode 1)
-  (tab-line-mode 1)    ;; Enable the tab line
+  (menu-bar-mode 0)    ;; Disable the menu bar
+  (tab-bar-mode 0)
+  (tab-line-mode 0)    ;; Disable the tab line
   (transient-mark-mode 1) ;; Enable transient mark mode for visual feedback in selections
 
   ;; Reset font customizations
