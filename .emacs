@@ -109,8 +109,11 @@
 (scroll-bar-mode -1) ;; Disable the scroll bar
 (menu-bar-mode 0)    ;; Disable the menu bar
 (tab-line-mode 0)    ;; Disable the tab line
+(global-visual-line-mode 0)
 (transient-mark-mode 1) ;; Enable transient mark mode for visual feedback in selections
 (setq-default inhibit-splash-screen t) ;; Prevent the splash screen from appearing at startup
+(setq-default truncate-lines t)
+(setq-default truncate-partial-width-windows t)
 (fset 'yes-or-no-p 'y-or-n-p) ;; Replace yes/no prompts with y/n for convenience
 
 ;; Set reusable font name variables
