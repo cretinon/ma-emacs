@@ -40,6 +40,8 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
     - [[#csv-mode][Csv mode]]
     - [[#markdown-mode][Markdown mode]]
     - [[#valign][Valign]]
+    - [[#english-spell-check][English spell check]]
+    - [[#shell-mode][Shell mode]]
     - [[#org-mode][Org mode]]
     - [[#pdf-mode][PDF mode]]
     - [[#w3m][w3m]]
@@ -61,6 +63,7 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
     - [[#gemini][Gemini]]
     - [[#copilot][Copilot]]
     - [[#mistral][Mistral]]
+    - [[#deepseek][DeepSeek]]
     - [[#custom-helpers--configuration][Custom Helpers & Configuration]]
   - [[#editor-code-assistant][Editor Code Assistant]]
   - [[#usefull-key-binding][Usefull Key Binding]]
@@ -847,6 +850,25 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
     (when (derived-mode-p 'eca-chat-mode)
       (flyspell-mode -1)))
   (add-hook 'eca-chat-mode-hook #'my/eca-chat-disable-flyspell)
+#+END_SRC
+
+*** Shell mode
+:PROPERTIES:
+:CUSTOM_ID: shell-mode
+:END:
+- *Purpose*: Renders Shell comments (lines starting with `#`) at 75% of the normal text size, for a clearer visual hierarchy between comments and code.
+- *Functionality*:
+  - Scales down the `font-lock-comment-face` and `font-lock-comment-delimiter-face` faces to 75% height in every `sh-mode` buffer.
+- *Usage*: Automatic when editing `.sh` files or any buffer in `sh-mode`.
+
+#+BEGIN_SRC emacs-lisp
+  ;; Shell mode: render comments (lines starting with #) at 75% of normal size
+  (defun my/sh-smaller-comments ()
+    "Display Shell comments at 75% of the default text height."
+    (face-remap-add-relative 'font-lock-comment-face '(:height 0.75))
+    (face-remap-add-relative 'font-lock-comment-delimiter-face '(:height 0.75)))
+
+  (add-hook 'sh-mode-hook #'my/sh-smaller-comments)
 #+END_SRC
 
 *** Org mode
