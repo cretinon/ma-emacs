@@ -1121,6 +1121,7 @@ Prompts for the AI backend and model to use."
     "~/git/ma-emacs/"
     "~/git/shell/"
     "~/git/storm/"
+    "~/git/tofu"
     "~/.cache/"
     "~/.config/eca/"
     "/tmp/"
@@ -1165,11 +1166,11 @@ otherwise invoke `my/eca' to start or switch to the ECA session."
 ;; - Emacs >= 30: native use-package `:vc' takes a plain plist
 ;; - Emacs <  30: vc-use-package expects (PACKAGE :url ... :rev ...)
 ;; below code working @home
-;; (use-package eca
-;;   :vc (:url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest))
+ (use-package eca
+   :vc (:url "https://github.com/editor-code-assistant/eca-emacs" :rev :newest))
 ;; below code working @work
-(use-package eca
-  :vc (:fetcher github :repo "editor-code-assistant/eca-emacs" :rev :newest))
+;; (use-package eca
+;;   :vc (:fetcher github :repo "editor-code-assistant/eca-emacs" :rev :newest))
 
 (defun reload-init-file ()
   (interactive)
