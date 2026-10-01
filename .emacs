@@ -435,6 +435,25 @@
   :init)
 (add-to-list 'auto-mode-alist '("\\.go\\'" . go-mode)) ;; Associate .yaml files with yaml-mode
 
+;; Tree-sitter: grammar sources (no grammar installed yet, Emacs 30 accepts ABI 13-14 only)
+(setq treesit-language-source-alist
+      '((bash       "https://github.com/tree-sitter/tree-sitter-bash")
+        (json       "https://github.com/tree-sitter/tree-sitter-json")
+        (yaml       "https://github.com/tree-sitter-grammars/tree-sitter-yaml")
+        (go         "https://github.com/tree-sitter/tree-sitter-go")
+        (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
+        (c          "https://github.com/tree-sitter/tree-sitter-c")
+        (python     "https://github.com/tree-sitter/tree-sitter-python")))
+
+;; Grammar of a language missing: the remap is skipped and the classic mode is kept
+(dolist (remap '((json-mode   json-ts-mode   json)
+                 (yaml-mode   yaml-ts-mode   yaml)
+                 (go-mode     go-ts-mode     go)
+                 (sh-mode     bash-ts-mode   bash)
+                 (python-mode python-ts-mode python)))
+  (when (treesit-language-available-p (nth 2 remap))
+    (add-to-list 'major-mode-remap-alist (cons (nth 0 remap) (nth 1 remap)))))
+
 ;; CSV mode configuration
 (use-package csv-mode
   :ensure t
@@ -485,10 +504,8 @@
     (flyspell-mode -1)))
 (add-hook 'eca-chat-mode-hook #'my/eca-chat-disable-flyspell)
 
-;; set comments smaller
-(custom-set-faces
- '(font-lock-comment-face ((t (:height 0.75 :slant italic)))))
-
+;; Comments are rendered smaller and italic in every buffer
+(set-face-attribute 'font-lock-comment-face nil :height 0.75 :slant 'italic)
 
 ;; Configure Org-mode core settings and rendering
 

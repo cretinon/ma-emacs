@@ -1,10 +1,10 @@
 # AI Agent Guidelines - ma-emacs
 
-Personal Emacs configuration maintained as a literate programming setup.
+Personal Emacs configuration: `.emacs` is the source of truth, and `README.org` both documents it and verifies it by tangling.
 
 ## Project Structure & Architecture
-- **`.emacs`**: Primary initialization file loaded by Emacs. Must stay in sync with `README.org`.
-- **`README.org`**: Literate source of truth for `.emacs`. Code blocks are tangled to form the configuration.
+- **`.emacs`**: Primary initialization file loaded by Emacs, and the source of truth of this configuration. `README.org` must stay in sync with it.
+- **`README.org`**: Literate documentation of `.emacs`. Its code blocks mirror `.emacs` and are tangled to verify the sync.
 - **`gemini.org`**, **`mistral.org`**, **`openai.org`**: Dedicated Org buffers for `gptel` interactions with file-local backend/model settings.
 - **`plantuml.org`**: Guide for PlantUML Deployment and Network diagrams.
 
@@ -15,14 +15,15 @@ Personal Emacs configuration maintained as a literate programming setup.
 - **Custom File**: Redirected to `~/.emacs.custom` (`(setq custom-file "~/.emacs.custom")`). Never write custom-set variables or faces into `.emacs`.
 
 ## Verification & Tangle Commands
-To tangle `README.org` and check synchronization with `.emacs`:
+To tangle `README.org` and check synchronization with `.emacs` (the final `diff` must print nothing):
 ```bash
 # Tangle README.org to temporary file and check diff with .emacs
-cp README.org /tmp/README.org
-sed -i 's/#+PROPERTY: header-args:emacs-lisp :results output :exports both/#+PROPERTY: header-args:emacs-lisp :results output :exports both :tangle yes/g' /tmp/README.org
-emacs --batch -l org --eval '(org-babel-tangle-file "/tmp/README.org")'
-tail -n +18 .emacs > /tmp/dot_emacs_stripped.el
-diff -u /tmp/README.el /tmp/dot_emacs_stripped.el
+mkdir -p /tmp/ECA
+cp README.org /tmp/ECA/README.org
+sed -i 's/#+PROPERTY: header-args:emacs-lisp :results output :exports both/#+PROPERTY: header-args:emacs-lisp :results output :exports both :tangle yes/g' /tmp/ECA/README.org
+emacs --batch -l org --eval '(org-babel-tangle-file "/tmp/ECA/README.org")'
+tail -n +18 .emacs > /tmp/ECA/dot_emacs_stripped.el
+diff -u /tmp/ECA/README.el /tmp/ECA/dot_emacs_stripped.el
 ```
 
 ## Formatting & Style Rules
