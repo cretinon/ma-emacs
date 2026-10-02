@@ -190,33 +190,16 @@
   ;; Enable the all-the-icons completion mode
   (all-the-icons-completion-mode))
 
-(use-package neotree
+(use-package treemacs
   :ensure t
-  :bind ("<f5>" . neotree-toggle)  ;; Bind F5 for toggling NeoTree
-;;  :hook (emacs-startup . neotree)  ;; Open NeoTree on startup
+  :bind ("<f5>" . treemacs)         ;; Bind F5 for toggling the Treemacs sidebar
   :custom
-  (neo-theme 'icons)                ;; Use icon theme for NeoTree
-  (neo-smart-open t)                ;; Smart open behavior
-  (neo-autorefresh t)               ;; Auto-refresh the tree
-  (neo-window-width 35)             ;; Set window width for NeoTree
-  (neo-toggle-window-keep-p t)      ;; Keep window position after toggling
-  (neo-show-hidden-files t)         ;; Show hidden files
-
-  ;; Performance configuration - disable VC integration if slow
-  ;; (neo-vc-integration '(face char))
-
-  ;; Custom display function for the NeoTree buffer
-  (neo-display-action '(gopar/neo-display-fn))
-  :init
-  (defun gopar/neo-display-fn (buffer _alist)
-    ;; Display NeoTree buffer in a side window
-    (let ((window-pos (if (eq neo-window-position 'left) 'left 'right)))
-      (display-buffer-in-side-window buffer `((side . ,window-pos)
-                                              (inhibit-same-window . t)
-                                              (dedicated . t)
-                                              (window-parameters
-                                               (no-delete-other-windows . t)
-                                               (no-other-window . t)))))))
+  (treemacs-width 35)               ;; Set window width for Treemacs
+  (treemacs-show-hidden-files t)    ;; Show hidden files
+  :config
+  (treemacs-follow-mode 1)          ;; Follow the file of the current buffer
+  (treemacs-filewatch-mode 1)       ;; Auto-refresh the tree
+  (treemacs-git-mode 'deferred))    ;; Highlight git status asynchronously
 
 ;; Configure the tab bar appearance and behavior
 (setq tab-bar-close-button-show nil
@@ -435,15 +418,27 @@
   :init)
 (add-to-list 'auto-mode-alist '("\\.go\\'" . go-mode)) ;; Associate .yaml files with yaml-mode
 
-;; Tree-sitter: grammar sources (no grammar installed yet, Emacs 30 accepts ABI 13-14 only)
+
+;; Download and install tree sitter grammar
 (setq treesit-language-source-alist
-      '((bash       "https://github.com/tree-sitter/tree-sitter-bash")
-        (json       "https://github.com/tree-sitter/tree-sitter-json")
-        (yaml       "https://github.com/tree-sitter-grammars/tree-sitter-yaml")
-        (go         "https://github.com/tree-sitter/tree-sitter-go")
-        (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
-        (c          "https://github.com/tree-sitter/tree-sitter-c")
-        (python     "https://github.com/tree-sitter/tree-sitter-python")))
+      '((bash       "https://github.com/tree-sitter/tree-sitter-bash" "v0.20.0")
+        (json       "https://github.com/tree-sitter/tree-sitter-json" "v0.19.0")
+        (yaml       "https://github.com/tree-sitter-grammars/tree-sitter-yaml" "v0.7.2")
+        (go         "https://github.com/tree-sitter/tree-sitter-go" "v0.19.0")
+        (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile" "v0.1.0")
+        (c          "https://github.com/tree-sitter/tree-sitter-c" "v0.20.0")
+        (python     "https://github.com/tree-sitter/tree-sitter-python" "v0.20.0")
+        (awk        "https://github.com/Beaglefoot/tree-sitter-awk")))
+
+(dolist (lang-info treesit-language-source-alist)
+  (let ((lang (car lang-info)))
+    (unless (ignore-errors (treesit-ready-p lang))
+      (message "Tree-sitter : installating stable version for %s..." lang)
+      (let ((old-file (expand-file-name (format "libtree-sitter-%s.*" lang)
+                                        (expand-file-name "tree-sitter" user-emacs-directory))))
+        (when (file-expand-wildcards old-file)
+          (mapc 'delete-file (file-expand-wildcards old-file))))
+      (treesit-install-language-grammar lang))))
 
 ;; Grammar of a language missing: the remap is skipped and the classic mode is kept
 (dolist (remap '((json-mode   json-ts-mode   json)
@@ -816,6 +811,141 @@
    :preview-key '(:debounce 0.4 any))
   (setq consult-narrow-key "<") ;; "C-+"
 )
+
+;; Orderless: space separated, order independent matching in the minibuffer
+(use-package orderless
+  :ensure t
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-overrides '((file (styles basic partial-completion)))))
+
+;; Language servers: lsp-mode is only the client side, each server is installed
+;; separately and started automatically per project
+(add-to-list 'exec-path (expand-file-name "~/.local/bin"))
+(setenv "PATH" (concat (expand-file-name "~/.local/bin") ":" (getenv "PATH")))
+
+;; ECA chat buffers derive from gfm-mode, they must not start a language server
+(defun my/lsp-deferred-unless-chat ()
+  "Start `lsp-deferred' unless the current buffer is an ECA chat buffer."
+  (unless (derived-mode-p 'eca-chat-mode)
+    (lsp-deferred)))
+
+;; Shell script diagnostics stay with shellcheck, through flycheck
+(defun my/lsp-shellcheck-owns-diagnostics ()
+  "Keep flycheck (shellcheck) as the diagnostic source of shell buffers."
+  (setq-local lsp-diagnostics-disabled-modes
+              (cons major-mode lsp-diagnostics-disabled-modes)))
+
+;; pyright ships as an external client: it must be loaded to register itself
+(defun my/lsp-python-deferred ()
+  "Load the pyright client, then start the language server."
+  (require 'lsp-pyright)
+  (my/lsp-deferred-unless-chat))
+
+(use-package lsp-mode
+  :ensure t
+  :commands (lsp lsp-deferred)
+  :init
+  (setq lsp-keymap-prefix "C-c l")
+  :custom
+  (lsp-auto-guess-root nil)
+  (lsp-idle-delay 0.5)
+  (lsp-log-io nil)
+  (lsp-enable-file-watchers t)
+  (lsp-file-watch-threshold 4000)
+  (lsp-enable-snippet t)
+  (lsp-enable-on-type-formatting t)
+  (lsp-format-buffer-on-save nil)
+  (lsp-diagnostics-provider :auto)
+  (lsp-headerline-breadcrumb-enable nil)
+  (lsp-lens-enable t)
+  (lsp-modeline-diagnostics-enable nil)
+  (lsp-modeline-code-actions-enable t)
+  (lsp-modeline-workspace-status-enable t)
+  (lsp-enable-suggest-server-download t)
+  (lsp-enable-dap-auto-configure nil)
+  :hook
+  ((sh-mode . my/lsp-shellcheck-owns-diagnostics)
+   (bash-ts-mode . my/lsp-shellcheck-owns-diagnostics)
+   ((go-ts-mode go-mode) . my/lsp-deferred-unless-chat)
+   ((python-ts-mode python-mode) . my/lsp-python-deferred)
+   ((bash-ts-mode sh-mode) . my/lsp-deferred-unless-chat)
+   ((json-ts-mode json-mode) . my/lsp-deferred-unless-chat)
+   ((yaml-mode yaml-ts-mode) . my/lsp-deferred-unless-chat)
+   ((markdown-mode gfm-mode) . my/lsp-deferred-unless-chat)
+   ((dockerfile-mode dockerfile-ts-mode) . my/lsp-deferred-unless-chat)
+   ((c-ts-mode c-mode) . my/lsp-deferred-unless-chat)
+   ((c++-ts-mode c++-mode) . my/lsp-deferred-unless-chat)))
+
+(use-package lsp-ui
+  :ensure t
+  :commands lsp-ui-mode
+  :hook (lsp-mode . lsp-ui-mode)
+  :custom
+  (lsp-ui-sideline-enable t)
+  (lsp-ui-sideline-show-diagnostics nil)
+  (lsp-ui-sideline-show-hover t)
+  (lsp-ui-sideline-show-code-actions t)
+  (lsp-ui-doc-enable t)
+  (lsp-ui-doc-show-with-mouse t)
+  (lsp-ui-doc-show-with-cursor nil)
+  (lsp-ui-peek-enable nil))
+
+(use-package lsp-treemacs
+  :ensure t
+  :after lsp-mode
+  :commands (lsp-treemacs-symbols lsp-treemacs-errors-list
+                                  lsp-treemacs-call-hierarchy lsp-treemacs-type-hierarchy))
+
+(use-package dap-mode
+  :ensure t
+  :after lsp-mode
+  :commands (dap-mode dap-debug dap-hydra))
+
+(use-package consult-lsp
+  :ensure t
+  :after (lsp-mode consult))
+
+(with-eval-after-load 'lsp-mode
+  (define-key lsp-command-map (kbd "g s") #'consult-lsp-symbols)
+  (define-key lsp-command-map (kbd "g f") #'consult-lsp-file-symbols)
+  (define-key lsp-command-map (kbd "g p") #'consult-lsp-diagnostics))
+
+(use-package lsp-pyright
+  :ensure t
+  :after lsp-mode
+  :custom
+  (lsp-pyright-langserver-command "pyright-langserver")
+  (lsp-pyright-diagnostic-mode "openFilesOnly")
+  (lsp-pyright-auto-import-completions t))
+
+(use-package terraform-mode
+  :ensure t
+  :mode "\\.t\\(f\\(vars\\)?\\|ofu\\)\\'")
+
+(use-package awk-ts-mode
+  :ensure t
+  :if (treesit-language-available-p 'awk)
+  :mode "\\.[mg]?awk\\'")
+
+;; Clients bundled with lsp-mode: no :ensure, they load with lsp-mode
+(use-package lsp-go
+  :ensure nil
+  :after lsp-mode
+  :custom
+  (lsp-go-symbol-scope "workspace"))
+
+(use-package lsp-bash
+  :ensure nil
+  :after lsp-mode
+  :custom
+  (lsp-bash-allowed-shells '(sh bash)))
+
+(use-package lsp-clangd
+  :ensure nil
+  :after lsp-mode
+  :custom
+  (lsp-clients-clangd-args '("--header-insertion=never")))
 
 ;; Magit configuration for Git integration
 (use-package magit
