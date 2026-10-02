@@ -393,8 +393,7 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
   (treemacs-show-hidden-files t)    ;; Show hidden files
   :config
   (treemacs-follow-mode 1)          ;; Follow the file of the current buffer
-  (treemacs-filewatch-mode 1)       ;; Auto-refresh the tree
-  (treemacs-git-mode 'deferred))    ;; Highlight git status asynchronously
+  (treemacs-filewatch-mode 1))      ;; Auto-refresh the tree
 #+END_SRC
 
 *** Tab Bar Configuration
@@ -755,42 +754,47 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
   - Declares the grammar source of each wanted language, each pinned to a revision Emacs 30.1 accepts (ABI 13-14).
   - Installs at startup every grammar that is still missing, after deleting a stale library of the same language.
   - Switches `json-mode`, `yaml-mode`, `go-mode`, `sh-mode` and `python-mode` to their tree-sitter mode, only when the grammar of that language is available.
-  - Lets `c-ts-mode` and `dockerfile-ts-mode` switch on by themselves, which they do as soon as their grammar exists.
+  - Loads the TypeScript modes, which map `.ts` and `.tsx` themselves, and lets `c-ts-mode` and `dockerfile-ts-mode` switch on by themselves, as soon as their grammar exists.
 - *Usage*:
-  - Automatic on `.json`, `.yaml`, `.go`, `.sh`, `.py` and `.awk` buffers once the matching grammar is installed; without it the classic mode is kept unchanged.
+  - Automatic on `.json`, `.yaml`, `.go`, `.sh`, `.py`, `.ts`, `.tsx` and `.awk` buffers once the matching grammar is installed; without it the classic mode is kept unchanged.
   - Install one grammar on demand with `M-x treesit-install-language-grammar`, giving its name, for instance `bash`.
 
 #+BEGIN_SRC emacs-lisp
+  ;; Download and install tree sitter grammar
+  (setq treesit-language-source-alist
+        '((bash       "https://github.com/tree-sitter/tree-sitter-bash" "v0.20.0")
+          (json       "https://github.com/tree-sitter/tree-sitter-json" "v0.19.0")
+          (yaml       "https://github.com/tree-sitter-grammars/tree-sitter-yaml" "v0.7.2")
+          (go         "https://github.com/tree-sitter/tree-sitter-go" "v0.19.0")
+          (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "v0.23.2" "typescript/src")
+          (tsx        "https://github.com/tree-sitter/tree-sitter-typescript" "v0.23.2" "tsx/src")
+          (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile" "v0.1.0")
+          (c          "https://github.com/tree-sitter/tree-sitter-c" "v0.20.0")
+          (python     "https://github.com/tree-sitter/tree-sitter-python" "v0.20.0")
+          (awk        "https://github.com/Beaglefoot/tree-sitter-awk" "v0.7.2")))
 
-;; Download and install tree sitter grammar
-(setq treesit-language-source-alist
-      '((bash       "https://github.com/tree-sitter/tree-sitter-bash" "v0.20.0")
-        (json       "https://github.com/tree-sitter/tree-sitter-json" "v0.19.0")
-        (yaml       "https://github.com/tree-sitter-grammars/tree-sitter-yaml" "v0.7.2")
-        (go         "https://github.com/tree-sitter/tree-sitter-go" "v0.19.0")
-        (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile" "v0.1.0")
-        (c          "https://github.com/tree-sitter/tree-sitter-c" "v0.20.0")
-        (python     "https://github.com/tree-sitter/tree-sitter-python" "v0.20.0")
-        (awk        "https://github.com/Beaglefoot/tree-sitter-awk")))
+  (dolist (lang-info treesit-language-source-alist)
+    (let ((lang (car lang-info)))
+      (unless (ignore-errors (treesit-ready-p lang))
+        (message "Tree-sitter : installing stable version for %s..." lang)
+        (let ((old-file (expand-file-name (format "libtree-sitter-%s.*" lang)
+                                          (expand-file-name "tree-sitter" user-emacs-directory))))
+          (when (file-expand-wildcards old-file)
+            (mapc 'delete-file (file-expand-wildcards old-file))))
+        (treesit-install-language-grammar lang))))
 
-(dolist (lang-info treesit-language-source-alist)
-  (let ((lang (car lang-info)))
-    (unless (ignore-errors (treesit-ready-p lang))
-      (message "Tree-sitter : installating stable version for %s..." lang)
-      (let ((old-file (expand-file-name (format "libtree-sitter-%s.*" lang)
-                                        (expand-file-name "tree-sitter" user-emacs-directory))))
-        (when (file-expand-wildcards old-file)
-          (mapc 'delete-file (file-expand-wildcards old-file))))
-      (treesit-install-language-grammar lang))))
+  ;; Grammar of a language missing: the remap is skipped and the classic mode is kept
+  (dolist (remap '((json-mode   json-ts-mode   json)
+                   (yaml-mode   yaml-ts-mode   yaml)
+                   (go-mode     go-ts-mode     go)
+                   (sh-mode     bash-ts-mode   bash)
+                   (python-mode python-ts-mode python)))
+    (when (treesit-language-available-p (nth 2 remap))
+      (add-to-list 'major-mode-remap-alist (cons (nth 0 remap) (nth 1 remap)))))
 
-;; Grammar of a language missing: the remap is skipped and the classic mode is kept
-(dolist (remap '((json-mode   json-ts-mode   json)
-                 (yaml-mode   yaml-ts-mode   yaml)
-                 (go-mode     go-ts-mode     go)
-                 (sh-mode     bash-ts-mode   bash)
-                 (python-mode python-ts-mode python)))
-  (when (treesit-language-available-p (nth 2 remap))
-    (add-to-list 'major-mode-remap-alist (cons (nth 0 remap) (nth 1 remap)))))
+  ;; TypeScript has no classic mode: the ts modes map .ts/.tsx once loaded
+  (when (treesit-language-available-p 'typescript)
+    (require 'typescript-ts-mode))
 #+END_SRC
 
 #+BEGIN_SRC shell
@@ -1413,19 +1417,23 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 
 *** Client start and search path
 :PROPERTIES:
-:CUSTOM_ID: lsp-client-start
+:CUSTOM_ID: client-start-and-search-path
 :END:
 - *Purpose*: Finds the language server binaries and decides which buffers may start one.
 - *Functionality*:
   - Adds `~/.local/bin` to `exec-path` and `PATH`, which a graphical or daemon Emacs does not inherit from the shell profile.
   - Defers the server start until the buffer is visible, skips the ECA chat buffers (they derive from `gfm-mode`), hands shell scripts back to shellcheck and loads the external pyright client before starting Python.
+  - Roots every file under `/root/git` into a single project, which the shell language server requires to index the repositories together.
 - *Usage*: Nothing to call, the helpers are installed on the major mode hooks.
 
 #+BEGIN_SRC emacs-lisp
 ;; Language servers: lsp-mode is only the client side, each server is installed
 ;; separately and started automatically per project
-(add-to-list 'exec-path (expand-file-name "~/.local/bin"))
-(setenv "PATH" (concat (expand-file-name "~/.local/bin") ":" (getenv "PATH")))
+(let* ((bin (expand-file-name "~/.local/bin"))
+       (path (getenv "PATH")))
+  (add-to-list 'exec-path bin)
+  (unless (and path (string-match-p (regexp-quote bin) path))
+    (setenv "PATH" (if path (concat bin ":" path) bin))))
 
 ;; ECA chat buffers derive from gfm-mode, they must not start a language server
 (defun my/lsp-deferred-unless-chat ()
@@ -1437,23 +1445,39 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 (defun my/lsp-shellcheck-owns-diagnostics ()
   "Keep flycheck (shellcheck) as the diagnostic source of shell buffers."
   (setq-local lsp-diagnostics-disabled-modes
-              (cons major-mode lsp-diagnostics-disabled-modes)))
+              (cons major-mode
+                    (and (boundp 'lsp-diagnostics-disabled-modes)
+                         lsp-diagnostics-disabled-modes))))
 
 ;; pyright ships as an external client: it must be loaded to register itself
 (defun my/lsp-python-deferred ()
   "Load the pyright client, then start the language server."
   (require 'lsp-pyright)
   (my/lsp-deferred-unless-chat))
+
+;; The shell language server indexes a single workspace root; making /root/git
+;; the project root is what lets the repositories resolve each other's functions
+(defun my/git-umbrella-project (dir)
+  "Return a project rooted at /root/git for any DIR below it."
+  (let ((dir (file-name-as-directory (expand-file-name dir))))
+    (when (string-prefix-p "/root/git/" dir)
+      (cons 'transient "/root/git/"))))
+
+;; project.el must be loaded first: its defvar would otherwise discard
+;; `project-try-vc' instead of completing the hook
+(with-eval-after-load 'project
+  (add-hook 'project-find-functions #'my/git-umbrella-project))
 #+END_SRC
 
 *** Core configuration
 :PROPERTIES:
-:CUSTOM_ID: lsp-core
+:CUSTOM_ID: core-configuration
 :END:
 - *Purpose*: Sets the lsp-mode behaviour shared by every language.
 - *Functionality*:
   - Binds the lsp-mode keymap under `C-c l`, the default `s-l` being unusable in a terminal, and hooks the tree-sitter modes.
   - Keeps the JSON-RPC trace off, never formats on save, hides the breadcrumb and avoids duplicated modeline diagnostics.
+  - Takes the guessed project root without prompting, so a project file starts its server directly, while a file outside any project starts none.
 - *Usage*: `C-c l g g` jumps to a definition, `C-c l g r` lists references, `C-c l a a` runs a code action, `C-c l g p` lists the project diagnostics.
 
 #+BEGIN_SRC emacs-lisp
@@ -1463,7 +1487,7 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
   :init
   (setq lsp-keymap-prefix "C-c l")
   :custom
-  (lsp-auto-guess-root nil)
+  (lsp-auto-guess-root t)
   (lsp-idle-delay 0.5)
   (lsp-log-io nil)
   (lsp-enable-file-watchers t)
@@ -1486,6 +1510,7 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
    ((python-ts-mode python-mode) . my/lsp-python-deferred)
    ((bash-ts-mode sh-mode) . my/lsp-deferred-unless-chat)
    ((json-ts-mode json-mode) . my/lsp-deferred-unless-chat)
+   ((typescript-ts-mode typescript-mode tsx-ts-mode) . my/lsp-deferred-unless-chat)
    ((yaml-mode yaml-ts-mode) . my/lsp-deferred-unless-chat)
    ((markdown-mode gfm-mode) . my/lsp-deferred-unless-chat)
    ((dockerfile-mode dockerfile-ts-mode) . my/lsp-deferred-unless-chat)
@@ -1495,7 +1520,7 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 
 *** User interface and extras
 :PROPERTIES:
-:CUSTOM_ID: lsp-ui-extras
+:CUSTOM_ID: user-interface-and-extras
 :END:
 - *Purpose*: Adds the visual help lsp-mode does not provide alone.
 - *Functionality*:
@@ -1541,20 +1566,23 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 
 *** Language clients
 :PROPERTIES:
-:CUSTOM_ID: lsp-language-clients
+:CUSTOM_ID: language-clients
 :END:
 - *Purpose*: Wires each language to its server, and installs the modes the servers attach to.
 - *Functionality*:
-  - `lsp-pyright` drives Python through `pyright-langserver` (the `pyright` entry point refuses `--stdio`), `terraform-mode` gives `.tf`/`.tfvars`/`.tofu` files a proper mode, `awk-ts-mode` does the same for `.awk`.
-  - The clients bundled with `lsp-mode` are only tuned, they are not installed again: gopls searches whole workspaces, bash-ls keeps its default dialects, clangd stops inserting includes.
-- *Usage*: Run `M-x lsp-install-server` and pick the server of a language (`bash-ls`, `yamlls`, `json-ls`, `dockerfile-ls`, `clangd`, `ts-ls`, `marksman`) the first time you open such a file.
+  - `lsp-pyright` drives Python through `pyright-langserver --stdio`, resolved from the `pyright` entry point of `~/.local/bin`; `terraform-mode` gives `.tf`/`.tfvars`/`.tofu` files a proper mode, `awk-ts-mode` does the same for `.awk`.
+  - The clients bundled with `lsp-mode` are only tuned, they are not installed again: gopls searches whole workspaces, clangd stops inserting includes while keeping its decorators.
+  - `lsp-bash` resolves declarations across its whole workspace and not only in the sourced files, so the shell functions defined in a sibling repository are found.
+- *Usage*:
+  - Run `M-x lsp-install-server` and pick the server of a language (`bash-ls`, `yamlls`, `json-ls`, `dockerfile-ls`, `clangd`, `ts-ls`, `marksman`, `gopls`) the first time you open such a file.
+  - Check the root of the shell server with `M-x lsp-describe-session`, and its background analysis in `M-x lsp-workspace-show-log`.
+  - gopls and pyright are already installed on this host, and found through the `~/.local/bin` entry of `exec-path`.
 
 #+BEGIN_SRC emacs-lisp
 (use-package lsp-pyright
   :ensure t
   :after lsp-mode
   :custom
-  (lsp-pyright-langserver-command "pyright-langserver")
   (lsp-pyright-diagnostic-mode "openFilesOnly")
   (lsp-pyright-auto-import-completions t))
 
@@ -1574,17 +1602,19 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
   :custom
   (lsp-go-symbol-scope "workspace"))
 
-(use-package lsp-bash
-  :ensure nil
-  :after lsp-mode
-  :custom
-  (lsp-bash-allowed-shells '(sh bash)))
-
 (use-package lsp-clangd
   :ensure nil
   :after lsp-mode
   :custom
-  (lsp-clients-clangd-args '("--header-insertion=never")))
+  (lsp-clients-clangd-args '("--header-insertion=never" "--header-insertion-decorators=0")))
+
+(use-package lsp-bash
+  :ensure nil
+  :after lsp-mode
+  :config
+  (lsp-register-custom-settings
+   '(("bashIde.includeAllWorkspaceSymbols" t t)
+     ("bashIde.backgroundAnalysisMaxFiles" 3000))))
 #+END_SRC
 
 ** Magit

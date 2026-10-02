@@ -198,8 +198,7 @@
   (treemacs-show-hidden-files t)    ;; Show hidden files
   :config
   (treemacs-follow-mode 1)          ;; Follow the file of the current buffer
-  (treemacs-filewatch-mode 1)       ;; Auto-refresh the tree
-  (treemacs-git-mode 'deferred))    ;; Highlight git status asynchronously
+  (treemacs-filewatch-mode 1))      ;; Auto-refresh the tree
 
 ;; Configure the tab bar appearance and behavior
 (setq tab-bar-close-button-show nil
@@ -418,22 +417,23 @@
   :init)
 (add-to-list 'auto-mode-alist '("\\.go\\'" . go-mode)) ;; Associate .yaml files with yaml-mode
 
-
 ;; Download and install tree sitter grammar
 (setq treesit-language-source-alist
       '((bash       "https://github.com/tree-sitter/tree-sitter-bash" "v0.20.0")
         (json       "https://github.com/tree-sitter/tree-sitter-json" "v0.19.0")
         (yaml       "https://github.com/tree-sitter-grammars/tree-sitter-yaml" "v0.7.2")
         (go         "https://github.com/tree-sitter/tree-sitter-go" "v0.19.0")
+        (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "v0.23.2" "typescript/src")
+        (tsx        "https://github.com/tree-sitter/tree-sitter-typescript" "v0.23.2" "tsx/src")
         (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile" "v0.1.0")
         (c          "https://github.com/tree-sitter/tree-sitter-c" "v0.20.0")
         (python     "https://github.com/tree-sitter/tree-sitter-python" "v0.20.0")
-        (awk        "https://github.com/Beaglefoot/tree-sitter-awk")))
+        (awk        "https://github.com/Beaglefoot/tree-sitter-awk" "v0.7.2")))
 
 (dolist (lang-info treesit-language-source-alist)
   (let ((lang (car lang-info)))
     (unless (ignore-errors (treesit-ready-p lang))
-      (message "Tree-sitter : installating stable version for %s..." lang)
+      (message "Tree-sitter : installing stable version for %s..." lang)
       (let ((old-file (expand-file-name (format "libtree-sitter-%s.*" lang)
                                         (expand-file-name "tree-sitter" user-emacs-directory))))
         (when (file-expand-wildcards old-file)
@@ -448,6 +448,10 @@
                  (python-mode python-ts-mode python)))
   (when (treesit-language-available-p (nth 2 remap))
     (add-to-list 'major-mode-remap-alist (cons (nth 0 remap) (nth 1 remap)))))
+
+;; TypeScript has no classic mode: the ts modes map .ts/.tsx once loaded
+(when (treesit-language-available-p 'typescript)
+  (require 'typescript-ts-mode))
 
 ;; CSV mode configuration
 (use-package csv-mode
@@ -821,8 +825,11 @@
 
 ;; Language servers: lsp-mode is only the client side, each server is installed
 ;; separately and started automatically per project
-(add-to-list 'exec-path (expand-file-name "~/.local/bin"))
-(setenv "PATH" (concat (expand-file-name "~/.local/bin") ":" (getenv "PATH")))
+(let* ((bin (expand-file-name "~/.local/bin"))
+       (path (getenv "PATH")))
+  (add-to-list 'exec-path bin)
+  (unless (and path (string-match-p (regexp-quote bin) path))
+    (setenv "PATH" (if path (concat bin ":" path) bin))))
 
 ;; ECA chat buffers derive from gfm-mode, they must not start a language server
 (defun my/lsp-deferred-unless-chat ()
@@ -834,7 +841,9 @@
 (defun my/lsp-shellcheck-owns-diagnostics ()
   "Keep flycheck (shellcheck) as the diagnostic source of shell buffers."
   (setq-local lsp-diagnostics-disabled-modes
-              (cons major-mode lsp-diagnostics-disabled-modes)))
+              (cons major-mode
+                    (and (boundp 'lsp-diagnostics-disabled-modes)
+                         lsp-diagnostics-disabled-modes))))
 
 ;; pyright ships as an external client: it must be loaded to register itself
 (defun my/lsp-python-deferred ()
@@ -842,13 +851,26 @@
   (require 'lsp-pyright)
   (my/lsp-deferred-unless-chat))
 
+;; The shell language server indexes a single workspace root; making /root/git
+;; the project root is what lets the repositories resolve each other's functions
+(defun my/git-umbrella-project (dir)
+  "Return a project rooted at /root/git for any DIR below it."
+  (let ((dir (file-name-as-directory (expand-file-name dir))))
+    (when (string-prefix-p "/root/git/" dir)
+      (cons 'transient "/root/git/"))))
+
+;; project.el must be loaded first: its defvar would otherwise discard
+;; `project-try-vc' instead of completing the hook
+(with-eval-after-load 'project
+  (add-hook 'project-find-functions #'my/git-umbrella-project))
+
 (use-package lsp-mode
   :ensure t
   :commands (lsp lsp-deferred)
   :init
   (setq lsp-keymap-prefix "C-c l")
   :custom
-  (lsp-auto-guess-root nil)
+  (lsp-auto-guess-root t)
   (lsp-idle-delay 0.5)
   (lsp-log-io nil)
   (lsp-enable-file-watchers t)
@@ -871,6 +893,7 @@
    ((python-ts-mode python-mode) . my/lsp-python-deferred)
    ((bash-ts-mode sh-mode) . my/lsp-deferred-unless-chat)
    ((json-ts-mode json-mode) . my/lsp-deferred-unless-chat)
+   ((typescript-ts-mode typescript-mode tsx-ts-mode) . my/lsp-deferred-unless-chat)
    ((yaml-mode yaml-ts-mode) . my/lsp-deferred-unless-chat)
    ((markdown-mode gfm-mode) . my/lsp-deferred-unless-chat)
    ((dockerfile-mode dockerfile-ts-mode) . my/lsp-deferred-unless-chat)
@@ -915,7 +938,6 @@
   :ensure t
   :after lsp-mode
   :custom
-  (lsp-pyright-langserver-command "pyright-langserver")
   (lsp-pyright-diagnostic-mode "openFilesOnly")
   (lsp-pyright-auto-import-completions t))
 
@@ -935,17 +957,19 @@
   :custom
   (lsp-go-symbol-scope "workspace"))
 
-(use-package lsp-bash
-  :ensure nil
-  :after lsp-mode
-  :custom
-  (lsp-bash-allowed-shells '(sh bash)))
-
 (use-package lsp-clangd
   :ensure nil
   :after lsp-mode
   :custom
-  (lsp-clients-clangd-args '("--header-insertion=never")))
+  (lsp-clients-clangd-args '("--header-insertion=never" "--header-insertion-decorators=0")))
+
+(use-package lsp-bash
+  :ensure nil
+  :after lsp-mode
+  :config
+  (lsp-register-custom-settings
+   '(("bashIde.includeAllWorkspaceSymbols" t t)
+     ("bashIde.backgroundAnalysisMaxFiles" 3000))))
 
 ;; Magit configuration for Git integration
 (use-package magit
