@@ -29,17 +29,7 @@
         ("melpa"        . 1)
         ("nongnu"       . 0)))
 (package-initialize)
-(unless (package-installed-p 'use-package)
-  (package-refresh-contents)
-  (package-install 'use-package))
 (require 'use-package)
-
-;; Emacs < 30 has no native `:vc' support in use-package, provide it
-;; via vc-use-package. Emacs >= 30 supports `:vc' natively.
-(unless (>= emacs-major-version 30)
-  (unless (package-installed-p 'vc-use-package)
-    (package-vc-install "https://github.com/slotThe/vc-use-package"))
-  (require 'vc-use-package))
 
 ;; if we need to call debbuger on specific call
 ;;(debug-on-entry 'package-initialize)
@@ -49,7 +39,10 @@
 
 ;; Load the custom file (redirected saves from `customize')
 (setq custom-file "~/.emacs.custom")
-(load custom-file)
+(when (file-exists-p custom-file)
+  (condition-case err
+      (load custom-file 'noerror)
+    (error (display-warning 'init (format "custom-file: %s" err) :warning))))
 
 ;; Load and activate the Cyberpunk theme
 (use-package cyberpunk-theme
@@ -214,10 +207,12 @@
   (let ((default-bg (face-background 'default))
         (default-fg (face-foreground 'default))
         (inactive-fg (face-foreground 'mode-line-inactive)))
-    (custom-set-faces
-     `(tab-bar ((t (:inherit default :background ,default-bg :foreground ,default-fg))))
-     `(tab-bar-tab ((t (:inherit default :background ,default-fg :foreground ,default-bg))))
-     `(tab-bar-tab-inactive ((t (:inherit default :background ,default-bg :foreground ,inactive-fg)))))))
+    (set-face-attribute 'tab-bar nil
+                        :inherit 'default :background default-bg :foreground default-fg)
+    (set-face-attribute 'tab-bar-tab nil
+                        :inherit 'default :background default-fg :foreground default-bg)
+    (set-face-attribute 'tab-bar-tab-inactive nil
+                        :inherit 'default :background default-bg :foreground inactive-fg)))
 
 ;; Activate the tab bar mode and sync its appearance with the theme
 (my/sync-tab-bar-to-theme)
@@ -434,11 +429,11 @@
   (let ((lang (car lang-info)))
     (unless (ignore-errors (treesit-ready-p lang))
       (message "Tree-sitter : installing stable version for %s..." lang)
-      (let ((old-file (expand-file-name (format "libtree-sitter-%s.*" lang)
-                                        (expand-file-name "tree-sitter" user-emacs-directory))))
-        (when (file-expand-wildcards old-file)
-          (mapc 'delete-file (file-expand-wildcards old-file))))
-      (treesit-install-language-grammar lang))))
+      (condition-case err
+          (treesit-install-language-grammar lang)
+        (error (display-warning 'init
+                                (format "tree-sitter %s: %s" lang err)
+                                :warning))))))
 
 ;; Grammar of a language missing: the remap is skipped and the classic mode is kept
 (dolist (remap '((json-mode   json-ts-mode   json)
@@ -451,7 +446,9 @@
 
 ;; TypeScript has no classic mode: the ts modes map .ts/.tsx once loaded
 (when (treesit-language-available-p 'typescript)
-  (require 'typescript-ts-mode))
+  (condition-case err
+      (require 'typescript-ts-mode)
+    (error (display-warning 'init (format "typescript-ts-mode: %s" err) :warning))))
 
 ;; CSV mode configuration
 (use-package csv-mode
@@ -557,8 +554,9 @@
 ;;; Centering Org Documents --------------------------------
 
 ;; Install visual-fill-column
-(unless (package-installed-p 'visual-fill-column)
-  (package-install 'visual-fill-column))
+(use-package visual-fill-column
+  :ensure t
+  :defer t)
 
 ;; Configure fill width
 (setq visual-fill-column-width 80
@@ -567,8 +565,9 @@
 ;;; Org Present --------------------------------------------
 
 ;; Install org-present if needed
-(unless (package-installed-p 'org-present)
-  (package-install 'org-present))
+(use-package org-present
+  :ensure t
+  :defer t)
 
 (defun my/org-present-prepare-slide (buffer-name heading)
   ;; Show only top-level headlines
@@ -705,9 +704,18 @@
 ;; Set JAR path
 (setq org-plantuml-jar-path "~/plantuml/plantuml.jar")
 
-;; Allow local emacs variable to be set in the file
-(setq enable-local-variables :all
-      enable-local-eval t)
+;; File-local variables: safe values only, plus the config's own eval forms
+(defconst my/safe-local-eval-forms
+  '((gptel-mode 1)
+    (toggle-truncate-lines)
+    (org-toggle-inline-images)
+    (remove-hook 'before-save-hook #'org-make-toc t))
+  "Local `eval:' forms written and accepted by this configuration.")
+
+(setq enable-local-variables :safe
+      enable-local-eval :safe
+      safe-local-eval-forms (append my/safe-local-eval-forms
+                                    safe-local-eval-forms))
 
 ;; General Emacs configuration for completion
 (use-package emacs
@@ -1117,7 +1125,9 @@ otherwise open Magit status with `magit-status'."
   :ensure t
   :init)
 
-(require 'gptel-org) ;; Ensure gptel-org module is loaded
+(condition-case err
+    (require 'gptel-org)
+  (error (display-warning 'init (format "gptel-org: %s" err) :warning)))
 
 (setq gptel-default-mode 'org-mode
       gptel-prompt-prefix-alist '((markdown-mode . "# ") (org-mode . "* ") (text-mode . "🤖: "))
@@ -1126,6 +1136,7 @@ otherwise open Magit status with `magit-status'."
 
 (setq gptel-openai-backend
       (gptel-make-openai "OpenAI"
+        :key #'gptel-api-key-from-auth-source
         :host "api.openai.com"
         :models '("gpt-4o-mini" "gpt-4.1" "o4-mini")))
 
@@ -1151,21 +1162,42 @@ otherwise open Magit status with `magit-status'."
         :host "api.deepseek.com"
         :models '("deepseek-chat" "deepseek-reasoner")))
 
-(defun my/gptel-ensure-local-variables (backend-sym model)
+(defvar my/gptel-backends
+  '(("OpenAI" . gptel-openai-backend)
+    ("Gemini" . gptel-gemini-backend)
+    ("Mistral" . gptel-mistral-backend)
+    ("DeepSeek" . gptel-deepseek-backend)
+    ("Copilot" . gptel-copilot-backend))
+  "Backends selectable with `my/gptel-with-backend-selection'.")
+
+(defvar-local my/gptel-backend-name nil
+  "Name of the gptel backend persisted as a file-local variable.")
+
+(put 'my/gptel-backend-name 'safe-local-variable #'stringp)
+(put 'gptel-model 'safe-local-variable #'stringp)
+
+(defun my/gptel-apply-local-backend ()
+  "Apply the gptel backend named by `my/gptel-backend-name' to this buffer."
+  (when-let ((name my/gptel-backend-name)
+             (backend-sym (alist-get name my/gptel-backends nil nil #'string=)))
+    (setq-local gptel-backend (symbol-value backend-sym))))
+
+(add-hook 'hack-local-variables-hook #'my/gptel-apply-local-backend)
+
+(defun my/gptel-ensure-local-variables (backend-name model)
   "Ensure standard Org/gptel local variables exist at the end of the buffer."
   (save-excursion
     (goto-char (point-max))
-    ;; Only insert if the block doesn't exist yet
     (unless (save-excursion (search-backward "Local Variables:" nil t))
       (goto-char (point-max))
       (unless (bolp) (insert "\n"))
       (insert "\n# Local Variables:\n"
-              (format "# gptel-backend: %s\n" backend-sym)
+              (format "# my/gptel-backend-name: \"%s\"\n" backend-name)
               (format "# gptel-model: \"%s\"\n" model)
-              "# eval: (remove-hook 'before-save-hook 'org-make-toc)\n"
               "# eval: (gptel-mode 1)\n"
               "# eval: (toggle-truncate-lines)\n"
               "# eval: (org-toggle-inline-images)\n"
+              "# eval: (remove-hook 'before-save-hook #'org-make-toc t)\n"
               "# End:\n"))))
 
 (defun my/gptel-with-backend-selection ()
@@ -1173,25 +1205,14 @@ otherwise open Magit status with `magit-status'."
   (interactive)
   ;; Prompt for a file first so the session is tied to a persistent buffer
   (find-file (read-file-name "File to open or create: "))
-  (let* (;; Store the actual variable symbols instead of evaluating them immediately
-         (choices '(("OpenAI" . gptel-openai-backend)
-                    ("Gemini" . gptel-gemini-backend)
-                    ("Mistral" . gptel-mistral-backend)
-                    ("DeepSeek" . gptel-deepseek-backend)
-                    ("Copilot" . gptel-copilot-backend)))
+  (let* ((choices my/gptel-backends)
          (selected-name (completing-read "Select AI Backend: " choices nil t))
          (backend-sym (cdr (assoc selected-name choices)))
-         ;; Retrieve the actual backend object
          (backend-obj (symbol-value backend-sym))
-         ;; Get the first model from the backend's model list as the default
          (model (car (gptel-backend-models backend-obj))))
-
-    ;; Set them locally for the current session
     (setq-local gptel-backend backend-obj)
     (setq-local gptel-model model)
-
-    ;; Write them to the file-local variables so they persist on save/reopen
-    (my/gptel-ensure-local-variables backend-sym model)
+    (my/gptel-ensure-local-variables selected-name model)
     (gptel-mode 1)))
 (global-set-key (kbd "<f8>") 'my/gptel-with-backend-selection)  ;; Bind F8 to gptel backend selection
 
@@ -1362,19 +1383,8 @@ otherwise invoke `my/eca' to start or switch to the ECA session."
   (marginalia-mode))
 
 ;; if needed https://github.com/cretinon/ma-cgr
-(ignore-errors (load "~/git/ma-cgr/ma-cgr.el"))
+(condition-case err
+    (load "~/git/ma-cgr/ma-cgr.el" 'noerror)
+  (error (display-warning 'init (format "ma-cgr: %s" err) :warning)))
 
 (provide '.emacs)
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-vc-selected-packages
-   '((vc-use-package :vc-backend Git :url "https://github.com/slotThe/vc-use-package"))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
