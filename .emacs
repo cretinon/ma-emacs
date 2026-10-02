@@ -912,7 +912,8 @@
   (lsp-ui-doc-enable t)
   (lsp-ui-doc-show-with-mouse t)
   (lsp-ui-doc-show-with-cursor nil)
-  (lsp-ui-peek-enable nil))
+  (lsp-ui-peek-enable nil)
+  (lsp-ui-sideline-show-symbol nil))
 
 (use-package lsp-treemacs
   :ensure t

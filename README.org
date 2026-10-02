@@ -1541,7 +1541,8 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
   (lsp-ui-doc-enable t)
   (lsp-ui-doc-show-with-mouse t)
   (lsp-ui-doc-show-with-cursor nil)
-  (lsp-ui-peek-enable nil))
+  (lsp-ui-peek-enable nil)
+  (lsp-ui-sideline-show-symbol nil))
 
 (use-package lsp-treemacs
   :ensure t
