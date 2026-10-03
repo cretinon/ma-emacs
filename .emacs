@@ -273,6 +273,16 @@
   (advice-add 'treemacs-do-remove-project-from-workspace
               :after #'my/treemacs-redraw-after-project-change))
 
+;; Keep the git faces in sync when magit refreshes its buffers
+(defun my/treemacs-refresh-all ()
+  "Refresh every project of every treemacs buffer."
+  (interactive)
+  (treemacs-run-in-every-buffer
+   (treemacs--do-refresh (current-buffer) 'all)))
+
+(with-eval-after-load 'magit
+  (add-hook 'magit-post-refresh-hook #'my/treemacs-refresh-all))
+
 ;; Highlight indentation levels for better code readability
 (use-package indent-guide
   :ensure t

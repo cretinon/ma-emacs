@@ -406,7 +406,9 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
   - Integrates the Treemacs sidebar explorer, following the current file, watching the project for changes and highlighting git status.
   - Sorts the tree case-insensitively, and renders the project roots in that same order whatever their insertion order.
   - Adds the Magit glue (`treemacs-magit`) and switches Treemacs to the all-the-icons theme.
+  - Refreshes every Treemacs project on each Magit refresh, so the git status faces never stay stale.
 - *Usage*: Press `F5` to toggle the Treemacs file drawer; `M-x my/install-all-the-icons-fonts` once on a machine that lacks the icon fonts.
+  - `M-x my/treemacs-refresh-all` rebuilds every project tree, the way to clear a stale git face after a commit made outside Emacs.
 
 #+BEGIN_SRC emacs-lisp
   ;; Use package management for managing plugins
@@ -477,6 +479,16 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
                 :after #'my/treemacs-redraw-after-project-change)
     (advice-add 'treemacs-do-remove-project-from-workspace
                 :after #'my/treemacs-redraw-after-project-change))
+
+  ;; Keep the git faces in sync when magit refreshes its buffers
+  (defun my/treemacs-refresh-all ()
+    "Refresh every project of every treemacs buffer."
+    (interactive)
+    (treemacs-run-in-every-buffer
+     (treemacs--do-refresh (current-buffer) 'all)))
+
+  (with-eval-after-load 'magit
+    (add-hook 'magit-post-refresh-hook #'my/treemacs-refresh-all))
 #+END_SRC
 
 *** Indentation and block of code
