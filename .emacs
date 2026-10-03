@@ -1,16 +1,19 @@
-;;; .emacs --- Create GitHub repos safely from Emacs (auth-source) -*- lexical-binding: t; -*-
+;;; .emacs --- Personal Emacs configuration -*- lexical-binding: t; -*-
 
 ;; Author: Jacques Cretinon
-;; Keywords: git, tools
-;; Package-Requires: ((emacs "26.1"))
-;; Version: 1.0
+;; Keywords: convenience
+;; Package-Requires: ((emacs "30.1"))
+;; Version: 1.2
 
 ;;; Commentary:
 ;;
-;; v1.0 include some snippets, miss some LLM and doc (.authinfo) but is usable
+;; Personal configuration: UI and fonts, tree-sitter grammars, Org, LSP and
+;; Magit, the gptel LLM backends and the ECA assistant.
 
 ;;; Changelog:
 ;;
+;; v1.2 applies the review findings and keeps README.org in sync
+;; v1.1 closes the file-local eval hole, hardens the init and drops dead code
 ;; v0.1 is init of my .emacs.org, missing a lot of things and not fully tested
 
 ;;; Code:
@@ -27,7 +30,8 @@
       '(("melpa-stable" . 10)
         ("elpa"         . 5)
         ("melpa"        . 1)
-        ("nongnu"       . 0)))
+        ("nongnu"       . 0))
+      package-check-signature 'allow-unsigned)
 (package-initialize)
 (require 'use-package)
 
@@ -43,6 +47,28 @@
   (condition-case err
       (load custom-file 'noerror)
     (error (display-warning 'init (format "custom-file: %s" err) :warning))))
+
+;; External programs this configuration relies on
+(defvar my/required-programs
+  '(("multimarkdown" "markdown preview and export")
+    ("clangd" "C and C++ language server")
+    ("bash-language-server" "shell script language server")
+    ("gopls" "Go language server")
+    ("pyright-langserver" "Python language server")
+    ("shellcheck" "shell script linter")
+    ("rg" "ripgrep search (M-s r)")
+    ("aspell" "spell checking"))
+  "External programs used by this configuration, with the feature they serve.")
+
+(defun my/warn-missing-programs ()
+  "Warn about the external programs of `my/required-programs' that are absent."
+  (dolist (program my/required-programs)
+    (unless (executable-find (car program))
+      (display-warning 'init
+                       (format "%s is missing: %s" (car program) (cadr program))
+                       :warning))))
+
+(add-hook 'after-init-hook #'my/warn-missing-programs)
 
 ;; Load and activate the Cyberpunk theme
 (use-package cyberpunk-theme
@@ -109,12 +135,21 @@
 ;; (setq-default truncate-partial-width-windows t)
 (fset 'yes-or-no-p 'y-or-n-p) ;; Replace yes/no prompts with y/n for convenience
 
-;; Set reusable font name variables
-(defvar my/fixed-width-font "JetBrains Mono"
-  "The font to use for monospaced (fixed width) text.")
+;; Options of this configuration
+(defgroup my nil
+  "Personal configuration options."
+  :group 'convenience)
 
-(defvar my/variable-width-font "Cascadia code"
-  "The font to use for variable-pitch (document) text.")
+;; Set reusable font name variables
+(defcustom my/fixed-width-font "JetBrains Mono"
+  "The font to use for monospaced (fixed width) text."
+  :type 'string
+  :group 'my)
+
+(defcustom my/variable-width-font "Cascadia Code"
+  "The font to use for variable-pitch (document) text."
+  :type 'string
+  :group 'my)
 
 ;; NOTE: These settings might not be ideal for your machine, tweak them as needed!
 (set-face-attribute 'default nil :font my/fixed-width-font :weight 'light :height 180)
@@ -153,24 +188,35 @@
 (defun my/global-zoom-in () (interactive) (my/global-zoom 10))
 (defun my/global-zoom-out () (interactive) (my/global-zoom -10))
 
-(global-set-key (kbd "<C-wheel-up>") 'my/global-zoom-in)
-(global-set-key (kbd "<C-wheel-down>") 'my/global-zoom-out)
+(keymap-global-set "C-<wheel-up>" 'my/global-zoom-in)
+(keymap-global-set "C-<wheel-down>" 'my/global-zoom-out)
 
 ;; Enable global whitespace mode with preferred styles (show special char)
-(require 'whitespace)
 (setq-default whitespace-style '(face trailing tabs empty indentation::space))
 (global-whitespace-mode 1)
+
+(defun my/whitespace-off-in-excluded-buffers ()
+  "Keep `whitespace-mode' off in chat, PDF and special buffers."
+  (when (or (derived-mode-p 'eca-chat-mode)
+            (derived-mode-p 'pdf-view-mode)
+            (derived-mode-p 'special-mode))
+    (whitespace-mode -1)))
+
+(add-hook 'after-change-major-mode-hook #'my/whitespace-off-in-excluded-buffers 90)
 ;; Do not use tab for indentation
 (setq-default indent-tabs-mode nil) ;; Use spaces instead of tabs for indentation
 
 ;; Use package management for managing plugins
 (use-package all-the-icons
   :ensure t
-  :defer
+  :defer t
   ;; Ensure icons are only loaded in a graphical environment
-  :if (display-graphic-p)
-  :init
-  ;; Install the all-the-icons fonts if not already installed
+  :if (display-graphic-p))
+
+(defun my/install-all-the-icons-fonts ()
+  "Install the all-the-icons fonts when they are absent."
+  (interactive)
+  (require 'all-the-icons)
   (unless (member "all-the-icons" (font-family-list))
     (all-the-icons-install-fonts t)))
 
@@ -189,47 +235,48 @@
   :custom
   (treemacs-width 35)               ;; Set window width for Treemacs
   (treemacs-show-hidden-files t)    ;; Show hidden files
+  (treemacs-sorting 'alphabetic-case-insensitive-asc)  ;; Sort files and directories ignoring case
   :config
   (treemacs-follow-mode 1)          ;; Follow the file of the current buffer
   (treemacs-filewatch-mode 1))      ;; Auto-refresh the tree
 
-;; Configure the tab bar appearance and behavior
-(setq tab-bar-close-button-show nil
-      tab-bar-separator "|"
-      tab-bar-format '(tab-bar-format-tabs-groups
-                       tab-bar-separator
-                       tab-bar-format-align-right
-                       tab-bar-format-global))
+;; Magit events (commits, staging) are reported to treemacs
+(use-package treemacs-magit
+  :ensure t
+  :after treemacs)
 
-(defun my/sync-tab-bar-to-theme ()
-  "Synchronize tab-bar faces with the current theme."
-  (interactive)
-  (let ((default-bg (face-background 'default))
-        (default-fg (face-foreground 'default))
-        (inactive-fg (face-foreground 'mode-line-inactive)))
-    (set-face-attribute 'tab-bar nil
-                        :inherit 'default :background default-bg :foreground default-fg)
-    (set-face-attribute 'tab-bar-tab nil
-                        :inherit 'default :background default-fg :foreground default-bg)
-    (set-face-attribute 'tab-bar-tab-inactive nil
-                        :inherit 'default :background default-bg :foreground inactive-fg)))
+;; Icons provided by all-the-icons instead of the default theme
+(use-package treemacs-all-the-icons
+  :ensure t
+  :after treemacs
+  :config
+  (treemacs-load-theme "all-the-icons"))
 
-;; Activate the tab bar mode and sync its appearance with the theme
-(my/sync-tab-bar-to-theme)
-(tab-bar-mode 0)
+;; Project roots are kept in insertion order: render them sorted by name
+(defun my/treemacs-project-name< (a b)
+  "Return non-nil when project A sorts before project B by name, ignoring case."
+  (string< (downcase (treemacs-project->name a))
+           (downcase (treemacs-project->name b))))
 
-;; Bind keys for navigating tabs easily
-(global-set-key (kbd "<f2>") 'tab-new)          ;; Bind F2 to create a new tab
-(global-set-key (kbd "<C-f2>") 'tab-close)      ;; Bind C-F2 to close current tab
-(global-set-key (kbd "<f3>") 'tab-previous)
-(global-set-key (kbd "<f4>") 'tab-next)
+(defun my/treemacs-render-projects-sorted (render projects)
+  "Render PROJECTS through RENDER, sorted by project name ignoring case."
+  (funcall render (sort (copy-sequence projects) #'my/treemacs-project-name<)))
+
+(defun my/treemacs-redraw-after-project-change (&rest _)
+  "Redraw the treemacs buffers after a project was added or removed."
+  (treemacs--consolidate-projects))
+
+(with-eval-after-load 'treemacs
+  (advice-add 'treemacs--render-projects :around #'my/treemacs-render-projects-sorted)
+  (advice-add 'treemacs-do-add-project-to-workspace
+              :after #'my/treemacs-redraw-after-project-change)
+  (advice-add 'treemacs-do-remove-project-from-workspace
+              :after #'my/treemacs-redraw-after-project-change))
 
 ;; Highlight indentation levels for better code readability
 (use-package indent-guide
   :ensure t
-  :init
-  ;; Enable indent guide globally
-  (indent-guide-global-mode t))
+  :hook (prog-mode . indent-guide-mode))
 
 ;; Display line numbers in programming modes for easier navigation
 (add-hook 'prog-mode-hook #'display-line-numbers-mode)
@@ -237,7 +284,14 @@
 ;; PuTTY Configuration for Enhanced Key Mapping
 ;; Specific settings are required for using Emacs over PuTTY.
 ;; Ensure PuTTY is set to SCO mode and the terminal is configured as xterm-256color.
-(if (eq system-uses-terminfo t)
+(defcustom my/terminal-escape-remap nil
+  "Translate terminal escape sequences: ESC as Meta, \\e[I and \\e[O as keys.
+Disabled by default: those bytes carry the focus events the terminal
+transparency feature needs, and ESC as Meta removes ESC ESC ESC."
+  :type 'boolean
+  :group 'my)
+
+(if (and my/terminal-escape-remap (eq system-uses-terminfo t))
     (progn
       ;; Redefine the Escape key as Meta
       (define-key key-translation-map [\e] [\M])
@@ -302,49 +356,50 @@
       (define-key input-decode-map "\e[X" [f12])
       (define-key input-decode-map "\e[j" [S-f12])
       (define-key input-decode-map "\e[v" [C-f12])
-      (define-key input-decode-map "\e\e[X" [M-f12])
+      (define-key input-decode-map "\e\e[X" [M-f12])))
 
-      ;; M-arrow selection (terminal workaround)
-      ;; PuTTY/SCO cannot distinguish Shift+arrow from plain arrow (both send
-      ;; "\e[A"/"\e[B"/"\e[C"/"\e[D"), so Shift+arrow selection is unavailable
-      ;; in the terminal.  Alt+arrow sends a distinct sequence (ESC + arrow),
-      ;; which Emacs decodes as M-<left>/M-<right>/M-<up>/M-<down>.  Bind those
-      ;; to selection commands: the first press activates the region at point,
-      ;; subsequent presses move point so the region extends, mimicking the
-      ;; Shift+arrow behaviour of `shift-select-mode'.  Word movement stays
-      ;; available on C-<left>/C-<right> (or M-f/M-b).
-      ;; See https://www.gnu.org/software/emacs/manual/html_node/emacs/Mark.html
-      (defun my/select-with-arrow (move-fn arg)
-        "Move point with MOVE-FN, extending the active region if any."
-        (unless (region-active-p)
-          (push-mark (point) nil t))
-        (funcall move-fn arg))
-      (declare-function my/select-with-arrow nil "(move-fn arg)")
-      (unless (display-graphic-p)
-        (defun my/select-left (&optional arg)
-          "Select one character to the left (repeat to extend)."
-          (interactive "p")
-          (my/select-with-arrow #'left-char arg))
-        (defun my/select-right (&optional arg)
-          "Select one character to the right (repeat to extend)."
-          (interactive "p")
-          (my/select-with-arrow #'right-char arg))
-        (defun my/select-up (&optional arg)
-          "Select one line upward (repeat to extend)."
-          (interactive "p")
-          (my/select-with-arrow #'previous-line arg))
-        (defun my/select-down (&optional arg)
-          "Select one line downward (repeat to extend)."
-          (interactive "p")
-          (my/select-with-arrow #'next-line arg))
-        (global-set-key (kbd "M-<left>") 'my/select-left)
-        (global-set-key (kbd "M-<right>") 'my/select-right)
-        (global-set-key (kbd "M-<up>") 'my/select-up)
-        (global-set-key (kbd "M-<down>") 'my/select-down))))
+;; M-arrow selection (terminal workaround)
+;; PuTTY/SCO cannot distinguish Shift+arrow from plain arrow (both send
+;; "\e[A"/"\e[B"/"\e[C"/"\e[D"), so Shift+arrow selection is unavailable
+;; in the terminal.  Alt+arrow sends a distinct sequence (ESC + arrow),
+;; which Emacs decodes as M-<left>/M-<right>/M-<up>/M-<down>.  Bind those
+;; to selection commands: the first press activates the region at point,
+;; subsequent presses move point so the region extends, mimicking the
+;; Shift+arrow behaviour of `shift-select-mode'.  Word movement stays
+;; available on C-<left>/C-<right> (or M-f/M-b).
+;; See https://www.gnu.org/software/emacs/manual/html_node/emacs/Mark.html
+(defun my/select-with-arrow (move-fn arg)
+  "Move point with MOVE-FN, extending the active region if any."
+  (unless (region-active-p)
+    (push-mark (point) nil t))
+  (funcall move-fn arg))
+(declare-function my/select-with-arrow nil "(move-fn arg)")
+(unless (display-graphic-p)
+  (defun my/select-left (&optional arg)
+    "Select one character to the left (repeat to extend)."
+    (interactive "p")
+    (my/select-with-arrow #'left-char arg))
+  (defun my/select-right (&optional arg)
+    "Select one character to the right (repeat to extend)."
+    (interactive "p")
+    (my/select-with-arrow #'right-char arg))
+  (defun my/select-up (&optional arg)
+    "Select one line upward (repeat to extend)."
+    (interactive "p")
+    (my/select-with-arrow #'previous-line arg))
+  (defun my/select-down (&optional arg)
+    "Select one line downward (repeat to extend)."
+    (interactive "p")
+    (my/select-with-arrow #'next-line arg))
+  (keymap-global-set "M-<left>" 'my/select-left)
+  (keymap-global-set "M-<right>" 'my/select-right)
+  (keymap-global-set "M-<up>" 'my/select-up)
+  (keymap-global-set "M-<down>" 'my/select-down))
 
 ;; Use xterm-color for proper ANSI color support in compilation buffers
 (use-package xterm-color
-  :ensure t)
+  :ensure t
+  :defer t)
 
 ;; Set the compilation environment to use xterm-256color
 (setq compilation-environment '("TERM=xterm-256color"))
@@ -353,30 +408,23 @@
 (xterm-mouse-mode t)
 
 ;; UTF-8 Configuration for comprehensive encoding support
-(define-coding-system-alias 'UTF-8 'utf-8)
-(set-charset-priority 'unicode)
-(setq locale-coding-system 'utf-8)
-(set-terminal-coding-system 'utf-8)
-(set-keyboard-coding-system 'utf-8)
-(set-selection-coding-system 'utf-8)
 (prefer-coding-system 'utf-8)
 (setq default-process-coding-system '(utf-8-unix . utf-8-unix))
 
 ;; Manage Emacs directories for backups and temporary files
-(let ((backup-dir "~/.emacs.d/backups")           ;; Backup directory
-      (auto-saves-dir "~/.emacs.d/auto-saves/")   ;; Auto-save directory
-      (temporary-file-directory "~/.emacs.d/tmp/")) ;; Temporary files directory
+(let ((backup-dir "~/.emacs.d/backups")         ;; Backup directory
+      (auto-saves-dir "~/.emacs.d/auto-saves/") ;; Auto-save directory
+      (tmp-dir "~/.emacs.d/tmp/"))              ;; Temporary files directory
   ;; Create directories if they do not exist
-  (dolist (dir (list backup-dir auto-saves-dir temporary-file-directory))
+  (dolist (dir (list backup-dir auto-saves-dir tmp-dir))
     (unless (file-directory-p dir)
       (make-directory dir t)))
 
   ;; Set Emacs to use the specified directories for backups and auto-saves
-  (setq backup-directory-alist `(("." . ,backup-dir))
+  (setq temporary-file-directory (expand-file-name tmp-dir)
+        backup-directory-alist `(("." . ,backup-dir))
         auto-save-file-name-transforms `((".*" ,auto-saves-dir t))
-        auto-save-list-file-prefix (concat auto-saves-dir ".saves-")
-        tramp-backup-directory-alist `((".*" . ,backup-dir))
-        tramp-auto-save-directory auto-saves-dir))
+        auto-save-list-file-prefix (concat auto-saves-dir ".saves-")))
 
 (setq backup-by-copying t    ;; Don't delink hardlinks
       delete-old-versions t  ;; Clean up the backups
@@ -384,35 +432,21 @@
       kept-new-versions 5    ;; Keep some new versions
       kept-old-versions 2)   ;; Keep some old versions
 
+(defun my/delete-trailing-whitespace-before-save ()
+  "Remove trailing whitespace before saving, except in prose modes."
+  (unless (or (derived-mode-p 'org-mode)
+              (derived-mode-p 'markdown-mode)
+              (derived-mode-p 'gfm-mode))
+    (delete-trailing-whitespace)))
+
 ;; Enable features for better usability
 (save-place-mode 1)                     ;; Remember cursor position when closing files
 (global-auto-revert-mode 1)             ;; Refresh buffer if modified on disk
-(add-hook 'before-save-hook             ;; Remove trailing whitespace before saving except for some mode
-          (lambda ()
-            (unless (or (derived-mode-p 'org-mode)
-                        (derived-mode-p 'markdown-mode)
-                        (derived-mode-p 'gfm-mode))
-              (delete-trailing-whitespace))))
-
-;; JSON mode configuration
-(use-package json-mode
-  :ensure t
-  :init)
-(add-to-list 'auto-mode-alist '("\\.json\\'" . json-mode)) ;; Associate .json files with json-mode
-
-;; YAML mode configuration
-(use-package yaml-mode
-  :ensure t
-  :init)
-(add-to-list 'auto-mode-alist '("\\.yaml\\'" . yaml-mode)) ;; Associate .yaml files with yaml-mode
-
-;; GO mode configuration
-(use-package go-mode
-  :ensure t
-  :init)
-(add-to-list 'auto-mode-alist '("\\.go\\'" . go-mode)) ;; Associate .yaml files with yaml-mode
+(add-hook 'before-save-hook #'my/delete-trailing-whitespace-before-save)
 
 ;; Download and install tree sitter grammar
+;; `treesit-ready-p' is not available until treesit.el is loaded (not dumped here)
+(require 'treesit)
 (setq treesit-language-source-alist
       '((bash       "https://github.com/tree-sitter/tree-sitter-bash" "v0.20.0")
         (json       "https://github.com/tree-sitter/tree-sitter-json" "v0.19.0")
@@ -427,7 +461,7 @@
 
 (dolist (lang-info treesit-language-source-alist)
   (let ((lang (car lang-info)))
-    (unless (ignore-errors (treesit-ready-p lang))
+    (unless (treesit-ready-p lang t)
       (message "Tree-sitter : installing stable version for %s..." lang)
       (condition-case err
           (treesit-install-language-grammar lang)
@@ -435,13 +469,18 @@
                                 (format "tree-sitter %s: %s" lang err)
                                 :warning))))))
 
-;; Grammar of a language missing: the remap is skipped and the classic mode is kept
-(dolist (remap '((json-mode   json-ts-mode   json)
-                 (yaml-mode   yaml-ts-mode   yaml)
-                 (go-mode     go-ts-mode     go)
-                 (sh-mode     bash-ts-mode   bash)
+;; json, yaml and go have no third-party mode here: their extensions map
+;; straight to the tree-sitter mode, and only when its grammar is usable
+(dolist (entry '(("\\.json\\'" json-ts-mode json)
+                 ("\\.yaml\\'" yaml-ts-mode yaml)
+                 ("\\.go\\'"   go-ts-mode   go)))
+  (when (treesit-ready-p (nth 2 entry) t)
+    (add-to-list 'auto-mode-alist (cons (nth 0 entry) (nth 1 entry)))))
+
+;; sh and python modes are built in: remap them when their grammar is usable
+(dolist (remap '((sh-mode     bash-ts-mode   bash)
                  (python-mode python-ts-mode python)))
-  (when (treesit-language-available-p (nth 2 remap))
+  (when (treesit-ready-p (nth 2 remap) t)
     (add-to-list 'major-mode-remap-alist (cons (nth 0 remap) (nth 1 remap)))))
 
 ;; TypeScript has no classic mode: the ts modes map .ts/.tsx once loaded
@@ -505,33 +544,32 @@
 
 ;; Configure Org-mode core settings and rendering
 
-;; Load org-faces to make sure we can set appropriate faces
-(require 'org-faces)
+;; The Org faces below are applied once Org is loaded
+(with-eval-after-load 'org
+  ;; Resize Org headings (scale factors mirror `markdown-header-scaling-values'
+  ;; so Org level N matches Markdown level N)
+  (dolist (face '((org-level-1 . 2.0)
+                  (org-level-2 . 1.7)
+                  (org-level-3 . 1.4)
+                  (org-level-4 . 1.1)
+                  (org-level-5 . 1.0)
+                  (org-level-6 . 1.0)
+                  (org-level-7 . 1.0)
+                  (org-level-8 . 1.0)))
+    (set-face-attribute (car face) nil :font my/variable-width-font :weight 'medium :height (cdr face)))
 
-;; Resize Org headings (scale factors mirror `markdown-header-scaling-values'
-;; so Org level N matches Markdown level N)
-(dolist (face '((org-level-1 . 2.0)
-                (org-level-2 . 1.7)
-                (org-level-3 . 1.4)
-                (org-level-4 . 1.1)
-                (org-level-5 . 1.0)
-                (org-level-6 . 1.0)
-                (org-level-7 . 1.0)
-                (org-level-8 . 1.0)))
-  (set-face-attribute (car face) nil :font my/variable-width-font :weight 'medium :height (cdr face)))
+  ;; Make the document title a bit bigger
+  (set-face-attribute 'org-document-title nil :font my/variable-width-font :weight 'bold :height 1.3)
 
-;; Make the document title a bit bigger
-(set-face-attribute 'org-document-title nil :font my/variable-width-font :weight 'bold :height 1.3)
-
-;; Make sure certain org faces use the fixed-pitch face when variable-pitch-mode is on
-(set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
-(set-face-attribute 'org-table nil :inherit 'fixed-pitch)
-(set-face-attribute 'org-formula nil :inherit 'fixed-pitch)
-(set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
-(set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-(set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-(set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-(set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
+  ;; Make sure certain org faces use the fixed-pitch face when variable-pitch-mode is on
+  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-table nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-formula nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
 
 ;; Fold all drawers (PROPERTIES/LOGBOOK) when an Org buffer is opened,
 ;; and again after a save (org-make-toc may re-insert or reveal them)
@@ -547,9 +585,10 @@
 
 ;; Render Org property drawers at half the default font size
 ;; (:PROPERTIES:/:END: delimiters and the :KEY: value lines between them)
-(set-face-attribute 'org-drawer nil :height 0.5)
-(set-face-attribute 'org-special-keyword nil :height 0.5)
-(set-face-attribute 'org-property-value nil :height 0.5)
+(with-eval-after-load 'org
+  (set-face-attribute 'org-drawer nil :height 0.5)
+  (set-face-attribute 'org-special-keyword nil :height 0.5)
+  (set-face-attribute 'org-property-value nil :height 0.5))
 
 ;;; Centering Org Documents --------------------------------
 
@@ -579,12 +618,16 @@
   ;; Show only direct subheadings of the slide but don't expand them
   (org-show-children))
 
+(defvar-local my/org-present-remap-backup nil
+  "Value of `face-remapping-alist' before a presentation started.")
+
 (defun my/org-present-start ()
   (menu-bar-mode 0)
   (tool-bar-mode 0)
   (scroll-bar-mode 0)
   (tab-bar-mode 0)
   ;; Tweak font sizes
+  (setq my/org-present-remap-backup face-remapping-alist)
   (setq-local face-remapping-alist '((default (:height 1.5) variable-pitch)
                                      (header-line (:height 4.0) variable-pitch)
                                      (org-document-title (:height 1.75) org-document-title)
@@ -594,7 +637,7 @@
                                      (org-block-begin-line (:height 0.7) org-block)))
 
   ;; Set a blank header line string to create blank space at the top
-  (setq header-line-format " ")
+  (setq-local header-line-format " ")
 
   ;; Display inline images automatically
   (org-display-inline-images)
@@ -612,10 +655,11 @@
   (transient-mark-mode 1) ;; Enable transient mark mode for visual feedback in selections
 
   ;; Reset font customizations
-  (setq-local face-remapping-alist '((default variable-pitch default)))
+  (setq-local face-remapping-alist (or my/org-present-remap-backup
+                                       '((default variable-pitch default))))
 
   ;; Clear the header line string so that it isn't displayed
-  (setq header-line-format nil)
+  (setq-local header-line-format nil)
 
   ;; Stop displaying inline images
   (org-remove-inline-images)
@@ -632,10 +676,11 @@
 (add-hook 'org-present-mode-quit-hook 'my/org-present-end)
 (add-hook 'org-present-after-navigate-functions 'my/org-present-prepare-slide)
 
+(setq org-hide-emphasis-markers t
+      org-hide-leading-stars t)
+
 (use-package org
-  :custom
-  (org-hide-emphasis-markers t)
-  (org-hide-leading-stars t)
+  :defer t
   :config
   ;; Ensure code and verbatim text are distinct when markers are hidden
   (set-face-attribute 'org-code nil
@@ -644,11 +689,6 @@
   (set-face-attribute 'org-verbatim nil
                       :inherit 'fixed-pitch
                       :foreground "#f1fa8c"))
-(defun my/org-toggle-emphasis-markers ()
-  "Toggle hiding of Org emphasis markers."
-  (interactive)
-  (setq org-hide-emphasis-markers (not org-hide-emphasis-markers))
-  (font-lock-flush))
 
 ;; to insert a new TOC : M-x org-make-toc-insert
 ;; to populate TOC : org-make-toc
@@ -662,9 +702,9 @@
 ;; PDF tools configuration (commented out)
 (use-package pdf-tools
   :ensure t
-  :init
-  (pdf-tools-install) ;; Install pdf-tools
+  :defer t
   :config
+  (pdf-tools-install) ;; Install pdf-tools
   (add-hook 'pdf-isearch-minor-mode-hook (lambda () (ctrlf-local-mode -1)))
   (use-package org-pdftools
     :ensure t
@@ -675,8 +715,9 @@
 ;; Provided by the Debian `w3m-el' package (apt install w3m w3m-el w3m-img);
 ;; NOT available on MELPA, so no `:ensure t'.
 (use-package w3m
+  :if (locate-library "w3m")
   :init
-  (setq browse-url-browser-function 'w3m-browse-url)
+  (setq browse-url-browser-function 'eww)
   :custom
   (w3m-use-cookies t)
   (w3m-default-display-inline-images t)
@@ -685,21 +726,23 @@
 ;; PlantUML mode
 ;; prerequisite is to have downloaded plantuml.jar at https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar
 (use-package plantuml-mode
-  :ensure t)  ; For syntax highlighting (optional)
+  :ensure t  ; For syntax highlighting (optional)
+  :mode "\\.\\(pu\\|uml\\|plantuml\\|pum\\|plu\\)\\'")
 
 ;; Enable Babel support
-(org-babel-do-load-languages
- 'org-babel-load-languages
- '((plantuml . t)))
+(with-eval-after-load 'org
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((plantuml . t))))
 
 ;; Reload images in org-mode when evaluating a block of code
-(defun my-org-reload-images-after-babel-execute ()
+(defun my/org-reload-images-after-babel-execute ()
   "Toggle inline images to force a refresh after evaluating an Org Babel block."
   (when (eq major-mode 'org-mode)
       (org-toggle-inline-images nil) ; Turn off
       (org-toggle-inline-images t)))  ; Turn on
 
-(add-hook 'org-babel-after-execute-hook 'my-org-reload-images-after-babel-execute)
+(add-hook 'org-babel-after-execute-hook 'my/org-reload-images-after-babel-execute)
 
 ;; Set JAR path
 (setq org-plantuml-jar-path "~/plantuml/plantuml.jar")
@@ -730,7 +773,7 @@
   :ensure t
   :init
   (yas-global-mode 1) ;; Enable yasnippet globally
-  (setq yas-snippet-dir "~/.emacs.d/snippets")) ;; Specify the directory for snippets
+  (setq yas-snippet-dirs '("~/.emacs.d/snippets"))) ;; Specify the directory for snippets
 
 ;; Vertical interactive completion using vertico
 (use-package vertico
@@ -759,13 +802,13 @@
 
 ;; Use corfu in terminal as well
 (use-package corfu-terminal
-  :ensure t)
+  :ensure t
+  :defer t)
 (unless (display-graphic-p)                ;; Enable corfu-terminal mode only if not in a graphical session
   (corfu-terminal-mode +1))
 
 ;; Dabbrev configuration for buffer completion
 (use-package dabbrev
-  :ensure t
   :custom
   (dabbrev-upcase-means-case-search t)    ;; Treat case sensitivity with upcase characters
   (dabbrev-check-all-buffers t)            ;; Check all buffers for completion
@@ -853,19 +896,26 @@
                     (and (boundp 'lsp-diagnostics-disabled-modes)
                          lsp-diagnostics-disabled-modes))))
 
-;; pyright ships as an external client: it must be loaded to register itself
-(defun my/lsp-python-deferred ()
-  "Load the pyright client, then start the language server."
-  (require 'lsp-pyright)
-  (my/lsp-deferred-unless-chat))
+;; pyright ships as an external client: `use-package lsp-pyright' below loads
+;; it with lsp-mode, so the python hook is the shared one
 
-;; The shell language server indexes a single workspace root; making /root/git
-;; the project root is what lets the repositories resolve each other's functions
+;; The shell language server indexes a single workspace root; making the git
+;; directory the project root is what lets the repositories resolve each other
+(defvar my/git-umbrella-root
+  (file-name-as-directory (file-truename (expand-file-name "~/git")))
+  "Root directory shared by the repositories of this configuration.")
+
+(defcustom my/git-umbrella-project-enabled t
+  "When non-nil, every repository below `my/git-umbrella-root' forms one project."
+  :type 'boolean
+  :group 'my)
+
 (defun my/git-umbrella-project (dir)
-  "Return a project rooted at /root/git for any DIR below it."
-  (let ((dir (file-name-as-directory (expand-file-name dir))))
-    (when (string-prefix-p "/root/git/" dir)
-      (cons 'transient "/root/git/"))))
+  "Return a project rooted at `my/git-umbrella-root' for any DIR below it."
+  (when my/git-umbrella-project-enabled
+    (let ((dir (file-name-as-directory (expand-file-name dir))))
+      (when (string-prefix-p my/git-umbrella-root dir)
+        (cons 'transient my/git-umbrella-root)))))
 
 ;; project.el must be loaded first: its defvar would otherwise discard
 ;; `project-try-vc' instead of completing the hook
@@ -881,12 +931,12 @@
   (lsp-auto-guess-root t)
   (lsp-idle-delay 0.5)
   (lsp-log-io nil)
-  (lsp-enable-file-watchers t)
+  (lsp-enable-file-watchers nil)
   (lsp-file-watch-threshold 4000)
   (lsp-enable-snippet t)
   (lsp-enable-on-type-formatting t)
   (lsp-format-buffer-on-save nil)
-  (lsp-diagnostics-provider :auto)
+  (lsp-diagnostics-provider :flycheck)
   (lsp-headerline-breadcrumb-enable nil)
   (lsp-lens-enable t)
   (lsp-modeline-diagnostics-enable nil)
@@ -895,18 +945,14 @@
   (lsp-enable-suggest-server-download t)
   (lsp-enable-dap-auto-configure nil)
   :hook
-  ((sh-mode . my/lsp-shellcheck-owns-diagnostics)
-   (bash-ts-mode . my/lsp-shellcheck-owns-diagnostics)
-   ((go-ts-mode go-mode) . my/lsp-deferred-unless-chat)
-   ((python-ts-mode python-mode) . my/lsp-python-deferred)
-   ((bash-ts-mode sh-mode) . my/lsp-deferred-unless-chat)
-   ((json-ts-mode json-mode) . my/lsp-deferred-unless-chat)
-   ((typescript-ts-mode typescript-mode tsx-ts-mode) . my/lsp-deferred-unless-chat)
-   ((yaml-mode yaml-ts-mode) . my/lsp-deferred-unless-chat)
-   ((markdown-mode gfm-mode) . my/lsp-deferred-unless-chat)
-   ((dockerfile-mode dockerfile-ts-mode) . my/lsp-deferred-unless-chat)
-   ((c-ts-mode c-mode) . my/lsp-deferred-unless-chat)
-   ((c++-ts-mode c++-mode) . my/lsp-deferred-unless-chat)))
+  ((prog-mode . my/lsp-deferred-unless-chat)
+   ;; sh-base-mode covers sh-mode and bash-ts-mode, and runs before prog-mode-hook,
+   ;; so shellcheck disables LSP diagnostics before the server starts
+   (sh-base-mode . my/lsp-shellcheck-owns-diagnostics)
+   ;; text-mode children: not covered by prog-mode-hook
+   (markdown-mode . my/lsp-deferred-unless-chat)
+   (gfm-mode . my/lsp-deferred-unless-chat)
+   (yaml-ts-mode . my/lsp-deferred-unless-chat)))
 
 (use-package lsp-ui
   :ensure t
@@ -915,7 +961,7 @@
   :custom
   (lsp-ui-sideline-enable t)
   (lsp-ui-sideline-show-diagnostics nil)
-  (lsp-ui-sideline-show-hover t)
+  (lsp-ui-sideline-show-hover nil)
   (lsp-ui-sideline-show-code-actions t)
   (lsp-ui-doc-enable t)
   (lsp-ui-doc-show-with-mouse t)
@@ -939,9 +985,9 @@
   :after (lsp-mode consult))
 
 (with-eval-after-load 'lsp-mode
-  (define-key lsp-command-map (kbd "g s") #'consult-lsp-symbols)
-  (define-key lsp-command-map (kbd "g f") #'consult-lsp-file-symbols)
-  (define-key lsp-command-map (kbd "g p") #'consult-lsp-diagnostics))
+  (keymap-set lsp-command-map "g s" #'consult-lsp-symbols)
+  (keymap-set lsp-command-map "g f" #'consult-lsp-file-symbols)
+  (keymap-set lsp-command-map "g p" #'consult-lsp-diagnostics))
 
 (use-package lsp-pyright
   :ensure t
@@ -980,6 +1026,17 @@
    '(("bashIde.includeAllWorkspaceSymbols" t t)
      ("bashIde.backgroundAnalysisMaxFiles" 3000))))
 
+;; Window ratios used by `my/magit-display-buffer'
+(defcustom my/magit-status-height-ratio 0.8
+  "Ratio of frame height for the Magit status window."
+  :type 'number
+  :group 'my)
+
+(defcustom my/magit-process-width-ratio 0.5
+  "Ratio of Magit status window width for the Magit process window."
+  :type 'number
+  :group 'my)
+
 ;; Magit configuration for Git integration
 (use-package magit
   :ensure t  ;; Ensure the package is installed
@@ -991,24 +1048,8 @@
   (magit-diff-refine-hunk 'all)  ;; Highlight all changes in diffs
   (magit-process-finish-apply-ansi-colors t)  ;; Apply ANSI colors in Magit processes
   (magit-format-file-function #'magit-format-file-all-the-icons)  ;; Use all-the-icons when formatting file listings
-  :init
-  (defun magit/undo-last-commit (number-of-commits)
-    "Undoes the latest commit(s) without losing changes."
-    (interactive "P")  ;; Prompt for the number of commits to undo
-    (let ((num (if (numberp number-of-commits)
-                   number-of-commits
-                 1)))  ;; Default to 1 if not specified
-      (magit-reset-soft (format "HEAD^%d" num))))  ;; Perform a soft reset to undo commits
   :config
-  (require 'magit)  ;; Ensure Magit is loaded
-
   ;; Buffer display customizations for better navigation
-  (defvar my/magit-status-height-ratio 0.8
-    "Ratio of frame height for Magit status window.")  ;; Height ratio for status window
-
-  (defvar my/magit-process-width-ratio 0.5
-    "Ratio of Magit status window width for Magit process window.")  ;; Width ratio for process window
-
   (defun my/magit-display-buffer (buffer)
     "Custom display function for Magit buffers."
     (let ((mode (with-current-buffer buffer major-mode)))  ;; Get the major mode of the current buffer
@@ -1067,8 +1108,6 @@
 (use-package git-commit
   :ensure nil  ;; Do not ensure git-commit as it's part of Magit
   :after magit  ;; Load after Magit is available
-  ;; Uncomment below to automatically insert Jira ticket numbers
-  ;; :hook (git-commit-setup . gopar/auto-insert-jira-ticket-in-commit-msg)
   :custom
   (git-commit-summary-max-length 80)  ;; Set maximum length for commit summary
   :init)
@@ -1078,9 +1117,14 @@
   :ensure t  ;; Ensure git-gutter is installed
   :hook (after-init . global-git-gutter-mode))  ;; Enable git-gutter mode after initialization
 
-(defun my-git-gutter-refresh-after-push (&rest _)
+(defun my/git-gutter-refresh-after-push (&rest _)
   (git-gutter:update-all-windows))
-(advice-add 'magit-push :after #'my-git-gutter-refresh-after-push)
+(advice-add 'magit-push :after #'my/git-gutter-refresh-after-push)
+
+;; Refresh the Magit status buffer whenever the tree changes on disk
+(use-package magit-filenotify
+  :ensure t
+  :hook (magit-status-mode . magit-filenotify-mode))
 
 ;; Key binding to toggle Magit status view
 (defun my/magit-toggle ()
@@ -1103,7 +1147,7 @@ otherwise open Magit status with `magit-status'."
             (when (> (length (window-list (window-frame w))) 1)
               (delete-window w))))
       (magit-status))))
-(global-set-key (kbd "<f6>") 'my/magit-toggle)  ;; Bind F6 to toggle Magit
+(keymap-global-set "<f6>" 'my/magit-toggle)  ;; Bind F6 to toggle Magit
 
 ;; Allow Magit to search in authinfo for user/password
 (add-hook 'magit-process-find-password-functions
@@ -1112,55 +1156,54 @@ otherwise open Magit status with `magit-status'."
 ;; Forge integration for enhanced Magit functionality (commented out due to installation issues)
 (use-package forge
   :ensure t
-  :init)
+  :defer t)
 
 ;; check syntax
 (use-package flycheck
   :ensure t
-  :config
-  (add-hook 'after-init-hook 'global-flycheck-mode))
+  :hook (after-init . global-flycheck-mode))
 
-;; gptel
+;; gptel loads on first use: <f8>, M-x gptel or gptel-mode
 (use-package gptel
   :ensure t
-  :init)
+  :defer t)
 
-(condition-case err
-    (require 'gptel-org)
-  (error (display-warning 'init (format "gptel-org: %s" err) :warning)))
+(with-eval-after-load 'gptel
+  (condition-case err
+      (require 'gptel-org)
+    (error (display-warning 'init (format "gptel-org: %s" err) :warning)))
 
-(setq gptel-default-mode 'org-mode
-      gptel-prompt-prefix-alist '((markdown-mode . "# ") (org-mode . "* ") (text-mode . "🤖: "))
-      gptel-response-prefix-alist '((markdown-mode . "# ") (org-mode . "** ") (text-mode . "🤖: "))
-      )
+  (setq gptel-default-mode 'org-mode
+        gptel-prompt-prefix-alist '((markdown-mode . "# ") (org-mode . "* ") (text-mode . "🤖: "))
+        gptel-response-prefix-alist '((markdown-mode . "# ") (org-mode . "** ") (text-mode . "🤖: ")))
 
-(setq gptel-openai-backend
-      (gptel-make-openai "OpenAI"
-        :key #'gptel-api-key-from-auth-source
-        :host "api.openai.com"
-        :models '("gpt-4o-mini" "gpt-4.1" "o4-mini")))
+  (setq gptel-openai-backend
+        (gptel-make-openai "OpenAI"
+          :key #'gptel-api-key-from-auth-source
+          :host "api.openai.com"
+          :models '("gpt-4o-mini" "gpt-4.1" "o4-mini")))
 
-(setq gptel-gemini-backend
-      (gptel-make-gemini "Gemini"
-        :key #'gptel-api-key-from-auth-source
-        :stream t
-        :host "generativelanguage.googleapis.com"
-        :models '("gemini-3.5-flash")))
+  (setq gptel-gemini-backend
+        (gptel-make-gemini "Gemini"
+          :key #'gptel-api-key-from-auth-source
+          :stream t
+          :host "generativelanguage.googleapis.com"
+          :models '("gemini-3.5-flash")))
 
-(setq gptel-copilot-backend
-      (gptel-make-gh-copilot "Copilot Chat"))
+  (setq gptel-copilot-backend
+        (gptel-make-gh-copilot "Copilot Chat"))
 
-(setq gptel-mistral-backend
-      (gptel-make-openai "Mistral"
-        :key #'gptel-api-key-from-auth-source
-        :host "api.mistral.ai"
-        :models '("mistral-large-latest")))
+  (setq gptel-mistral-backend
+        (gptel-make-openai "Mistral"
+          :key #'gptel-api-key-from-auth-source
+          :host "api.mistral.ai"
+          :models '("mistral-large-latest")))
 
-(setq gptel-deepseek-backend
-      (gptel-make-openai "DeepSeek"
-        :key #'gptel-api-key-from-auth-source
-        :host "api.deepseek.com"
-        :models '("deepseek-chat" "deepseek-reasoner")))
+  (setq gptel-deepseek-backend
+        (gptel-make-openai "DeepSeek"
+          :key #'gptel-api-key-from-auth-source
+          :host "api.deepseek.com"
+          :models '("deepseek-chat" "deepseek-reasoner"))))
 
 (defvar my/gptel-backends
   '(("OpenAI" . gptel-openai-backend)
@@ -1180,7 +1223,9 @@ otherwise open Magit status with `magit-status'."
   "Apply the gptel backend named by `my/gptel-backend-name' to this buffer."
   (when-let ((name my/gptel-backend-name)
              (backend-sym (alist-get name my/gptel-backends nil nil #'string=)))
-    (setq-local gptel-backend (symbol-value backend-sym))))
+    (require 'gptel)
+    (when (boundp backend-sym)
+      (setq-local gptel-backend (symbol-value backend-sym)))))
 
 (add-hook 'hack-local-variables-hook #'my/gptel-apply-local-backend)
 
@@ -1203,6 +1248,7 @@ otherwise open Magit status with `magit-status'."
 (defun my/gptel-with-backend-selection ()
   "Start gptel-mode after opening/creating a file and prompting for backend selection."
   (interactive)
+  (require 'gptel)
   ;; Prompt for a file first so the session is tied to a persistent buffer
   (find-file (read-file-name "File to open or create: "))
   (let* ((choices my/gptel-backends)
@@ -1214,77 +1260,10 @@ otherwise open Magit status with `magit-status'."
     (setq-local gptel-model model)
     (my/gptel-ensure-local-variables selected-name model)
     (gptel-mode 1)))
-(global-set-key (kbd "<f8>") 'my/gptel-with-backend-selection)  ;; Bind F8 to gptel backend selection
+(keymap-global-set "<f8>" 'my/gptel-with-backend-selection)  ;; Bind F8 to gptel backend selection
 
-(defun my/gptel-review-code ()
-  "Review selected code or current buffer in a split window.
-Prompts for the AI backend and model to use."
-  (interactive)
-  (let* (;; Use backquote (`) so we can evaluate variables with comma (,)
-         (choices `(("OpenAI (gpt-4o-mini)" . (,gptel-openai-backend . "gpt-4o-mini"))
-                    ("OpenAI (o4-mini)" . (,gptel-openai-backend . "o4-mini"))
-                    ("Gemini (gemini-3.5-flash)" . (,gptel-gemini-backend . "gemini-3.5-flash"))
-                    ("Mistral (mistral-large-latest)" . (,gptel-mistral-backend . "mistral-large-latest"))
-                    ("DeepSeek (deepseek-chat)" . (,gptel-deepseek-backend . "deepseek-chat"))
-                    ("DeepSeek (deepseek-reasoner)" . (,gptel-deepseek-backend . "deepseek-reasoner"))
-                    ("Copilot Chat" . (,gptel-copilot-backend . nil))))
-         (selected-key (completing-read "Select AI Backend: " choices nil t))
-         (selected-val (cdr (assoc selected-key choices)))
-         (backend (car selected-val))
-         (model (cdr selected-val))
-         (code (if (use-region-p)
-                   (buffer-substring-no-properties (region-beginning) (region-end))
-                 (buffer-substring-no-properties (point-min) (point-max))))
-
-         ;; Updated prompt to request a Table of Contents
-         (prompt (concat "Perform a strict code review of the following code.\n\n"
-                         "CRITICAL REQUIREMENTS:\n"
-                         "1. You must format your entire response using Org-mode syntax.\n"
-                         "2. Start your response with a 'Table of Contents' section listing "
-                         "all the main headings of your review as a clean Org-mode list.\n"
-                         "3. Make a separate review for each function, identifying bugs, security issues, "
-                         "and performance bottlenecks.\n"
-                         "4. Provide a code example in order to correct each bug"
-                         "5. All code snippets and code examples must be wrapped "
-                         "in '#+BEGIN_SRC <language>' and '#+END_SRC' blocks.\n\n"
-                         "Code to review:\n"
-                         code))
-
-
-         (review-buf (get-buffer-create "*AI Code Review/")))
-
-    ;; Display the review buffer in a side window on the right
-    (display-buffer-in-side-window review-buf '((side . right) (window-width . 80)))
-
-    (with-current-buffer review-buf
-      (read-only-mode -1)
-      (erase-buffer)
-      (org-mode)
-      (insert (format "/ Code Review Output (%s)\n\n/Analyzing.../\n" selected-key)))
-
-
-    ;; Dynamically bind gptel-backend and gptel-model for the request
-    (let ((gptel-backend backend)
-          (gptel-model model))
-      (gptel-request
-       prompt
-       :callback (lambda (response info)
-                   (cond
-                    ((and response (stringp response))
-                     (with-current-buffer review-buf
-                       (erase-buffer)
-                       (insert (format "# Code Review Output (%s)\n\n" selected-key))
-                       (insert response)
-                       (org-mode)))
-                    ((plist-get info :error)
-                     (message "Review failed: %s" (plist-get info :error)))))))))
-
-(with-eval-after-load 'gptel
-  (setq gptel-directives
-        '((default . "You are a large language model living in Emacs and a helpful assistant. Respond concisely. Always answer in English even if I ask questions in French. If sources for answers are more than one year old, always warn me with this text 'WARNING OLD SOURCES' at the beginning of the answer. When providing a bash shell script, always split script into smart functions and add an additional BATS script in order to test functions. Always add at least one link to documentation referring to your answer.")))
-    ;; Force buffer-local behavior
-  (setq-local gptel-directives gptel-directives)
-  )
+(setq gptel-directives
+      '((default . "You are a large language model living in Emacs and a helpful assistant. Respond concisely. Always answer in English even if I ask questions in French. If sources for answers are more than one year old, always warn me with this text 'WARNING OLD SOURCES' at the beginning of the answer. When providing a bash shell script, always split script into smart functions and add an additional BATS script in order to test functions. Always add at least one link to documentation referring to your answer.")))
 
 ;; eca
 (require 'auth-source)
@@ -1307,8 +1286,16 @@ Prompts for the AI backend and model to use."
                                             (funcall secret)
                                           secret)))))))
 
+;; The keys must be in the environment before the ECA server process starts
+(defun my/eca-process-setup-keys (&rest _)
+  "Prepare the API keys before the ECA server process starts."
+  (my/get-eca-api-key))
+
+(with-eval-after-load 'eca
+  (advice-add 'eca-process-start :before #'my/eca-process-setup-keys))
+
 ;; Define additional workspace paths you want to include
-(defvar my/eca-extra-workspaces
+(defcustom my/eca-extra-workspaces
   '("~/git/mcp/"
     "~/git/agents/"
     "~/git/ma-emacs/"
@@ -1316,19 +1303,21 @@ Prompts for the AI backend and model to use."
     "~/git/storm/"
     "~/git/tofu"
     "~/git/docker"
-    "~/.cache/"
     "~/.config/eca/"
-    "/tmp/"
     "~/.emacs.d/")
-  "List of additional workspace directories to attach to ECA sessions.")
+  "List of additional workspace directories to attach to ECA sessions."
+  :type '(repeat directory)
+  :group 'my)
 
 (defun my/eca-attach-extra-workspaces ()
   "Attach `my/eca-extra-workspaces' to the current ECA session."
-  (when-let ((session (eca-session)))
-    (dolist (dir my/eca-extra-workspaces)
-      (let ((expanded-dir (expand-file-name dir)))
-        (when (file-directory-p expanded-dir)
-          (eca--session-add-workspace-folder session expanded-dir))))))
+  (when (and (fboundp 'eca-session)
+             (fboundp 'eca--session-add-workspace-folder))
+    (when-let ((session (eca-session)))
+      (dolist (dir my/eca-extra-workspaces)
+        (let ((expanded-dir (expand-file-name dir)))
+          (when (file-directory-p expanded-dir)
+            (eca--session-add-workspace-folder session expanded-dir)))))))
 
 ;; Wrap the interactive command so decrypt happens BEFORE eca command executes
 (defun my/eca ()
@@ -1354,7 +1343,7 @@ otherwise invoke `my/eca' to start or switch to the ECA session."
         (quit-windows-on buf)
       (my/eca))))
 
-(global-set-key (kbd "<f7>") 'my/eca-toggle)  ;; Bind F7 to toggle ECA
+(keymap-global-set "<f7>" 'my/eca-toggle)  ;; Bind F7 to toggle ECA
 
 ;; `:vc' syntax depends on the Emacs version:
 ;; - Emacs >= 30: native use-package `:vc' takes a plain plist
@@ -1366,16 +1355,26 @@ otherwise invoke `my/eca' to start or switch to the ECA session."
 ;; (use-package eca
 ;;   :vc (:fetcher github :repo "editor-code-assistant/eca-emacs" :rev :newest))
 
-(defun reload-init-file ()
+(defun my/reload-init-file ()
+  "Reload the init file."
   (interactive)
   (load-file user-init-file))
-(global-set-key (kbd "C-c C-l") 'reload-init-file)
-(global-set-key (kbd "C-c ;")   'comment-region)
-(global-set-key (kbd "C-c .")   'uncomment-region)
-(global-set-key (kbd "C-c SPC") 'copy-region-as-kill)
-(global-set-key (kbd "C-v") 'yank)
-(global-set-key (kbd "C-x SPC") 'kill-region)
-(global-set-key (kbd "C-c t") 'toggle-truncate-lines)
+
+(defun my/yank-or-scroll-up ()
+  "Yank in a writable buffer, scroll up in a read-only one."
+  (interactive)
+  (if (or buffer-read-only (derived-mode-p 'special-mode))
+      (scroll-up-command)
+    (call-interactively #'yank)))
+
+(keymap-global-set "C-c C-l" 'my/reload-init-file)
+(keymap-global-set "C-c ;"   'comment-region)
+(keymap-global-set "C-c ."   'uncomment-region)
+(keymap-global-set "C-c SPC" 'copy-region-as-kill)
+(keymap-global-set "C-c r"   'rectangle-mark-mode)
+(keymap-global-set "C-v" 'my/yank-or-scroll-up)
+(keymap-global-set "C-x SPC" 'kill-region)
+(keymap-global-set "C-c t" 'toggle-truncate-lines)
 
 (use-package marginalia
   :ensure t
@@ -1387,4 +1386,4 @@ otherwise invoke `my/eca' to start or switch to the ECA session."
     (load "~/git/ma-cgr/ma-cgr.el" 'noerror)
   (error (display-warning 'init (format "ma-cgr: %s" err) :warning)))
 
-(provide '.emacs)
+;;; .emacs ends here

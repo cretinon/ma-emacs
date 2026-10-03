@@ -22,9 +22,13 @@ mkdir -p /tmp/ECA
 cp README.org /tmp/ECA/README.org
 sed -i 's/#+PROPERTY: header-args:emacs-lisp :results output :exports both/#+PROPERTY: header-args:emacs-lisp :results output :exports both :tangle yes/g' /tmp/ECA/README.org
 emacs --batch -l org --eval '(org-babel-tangle-file "/tmp/ECA/README.org")'
-tail -n +18 .emacs > /tmp/ECA/dot_emacs_stripped.el
+sed -n '/^;;Overall, this code configures/,$p' .emacs > /tmp/ECA/dot_emacs_stripped.el
 diff -u /tmp/ECA/README.el /tmp/ECA/dot_emacs_stripped.el
 ```
+
+The `.emacs` body is extracted by content, not by line count: the comparison starts at the first
+line after the header, so a header edit (changelog entry, package metadata) cannot silently shift
+it. A `tail -n +N` offset drifts the moment the header gains or loses a line.
 
 ## Formatting & Style Rules
 - **Indentation**: Strictly 2 spaces. No tabs (`(setq-default indent-tabs-mode nil)`).
@@ -63,7 +67,7 @@ When searching information or solving tasks, follow this search order:
 2. **Web Documentation**: Second, search external/web documentation using available tools.
 3. **Codebase**: Third, search source code files across the repository.
 
-### Custom Code Review (`my/gptel-review-code`) Format:
+### Custom Code Review Format:
 - Use strict Org-mode syntax starting with a Table of Contents.
 - Perform function-by-function analysis (bugs, security, performance).
 - Provide correcting code examples in `#+BEGIN_SRC <language>` blocks for every bug found.
