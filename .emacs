@@ -3,7 +3,7 @@
 ;; Author: Jacques Cretinon
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "30.1"))
-;; Version: 1.2
+;; Version: 1.3
 
 ;;; Commentary:
 ;;
@@ -12,6 +12,7 @@
 
 ;;; Changelog:
 ;;
+;; v1.3 keeps the tables wrapped after a save and contains a broken pretty mode
 ;; v1.2 applies the review findings and keeps README.org in sync
 ;; v1.1 closes the file-local eval hole, hardens the init and drops dead code
 ;; v0.1 is init of my .emacs.org, missing a lot of things and not fully tested
@@ -524,15 +525,31 @@ transparency feature needs, and ESC as Meta removes ESC ESC ESC."
   :ensure t
   :commands (markdown-table-wrap markdown-table-wrap-unwrap))
 
+(defun my/markdown-table-wrap-pretty-enable ()
+  "Render the tables of the buffer, containing a failure to load the mode."
+  (with-demoted-errors "markdown-table-wrap-pretty: %S"
+    (markdown-table-wrap-pretty-mode)))
+
+(defun my/markdown-table-wrap-pretty-refresh ()
+  "Render the tables of the buffer again, after a save or a revert.
+Editing a table drops its overlays on purpose, and nothing brings them back."
+  (when (bound-and-true-p markdown-table-wrap-pretty-mode)
+    (with-demoted-errors "markdown-table-wrap-pretty: %S"
+      (markdown-table-wrap-pretty-buffer))))
+
+;; ships in the `markdown-table-wrap' package above: no :ensure of its own
 (use-package markdown-table-wrap-pretty
   :commands (markdown-table-wrap-pretty-mode
-             markdown-table-wrap-pretty-toggle)
+             markdown-table-wrap-pretty-toggle
+             markdown-table-wrap-pretty-buffer)
   :init
   (setq markdown-table-wrap-pretty-default-on-major-modes
         '(markdown-mode gfm-mode org-mode))  ;; gfm-mode covers .md files and ECA chats
   ;; depth -90: render the tables before a failing mode hook of the buffer can skip ours
-  (add-hook 'markdown-mode-hook #'markdown-table-wrap-pretty-mode -90)
-  (add-hook 'org-mode-hook #'markdown-table-wrap-pretty-mode -90))
+  (add-hook 'markdown-mode-hook #'my/markdown-table-wrap-pretty-enable -90)
+  (add-hook 'org-mode-hook #'my/markdown-table-wrap-pretty-enable -90)
+  (add-hook 'after-save-hook #'my/markdown-table-wrap-pretty-refresh)
+  (add-hook 'after-revert-hook #'my/markdown-table-wrap-pretty-refresh))
 
 (defun my/markdown-table-bounds ()
   "Return the bounds of the pipe table containing point, or nil."
@@ -549,17 +566,23 @@ transparency feature needs, and ESC as Meta removes ESC ESC ESC."
 
 (defun my/wrap-table-at-point (width)
   "Rewrite the pipe table at point to WIDTH, or to the window width.
-The table is unwrapped first, so a table wrapped earlier can be resized;
+Only a Markdown table outside a code block is rewritten.  The table is
+unwrapped first, so a table wrapped earlier can be resized;
 `markdown-table-wrap-unwrap' joins mid-word breaks with a space, so the
 columns of such a table may shift on a second pass."
   (interactive "P")
+  (require 'markdown-table-wrap)
+  (unless (derived-mode-p 'markdown-mode)
+    (user-error "Only Markdown pipe tables are wrapped here"))
   (let ((bounds (my/markdown-table-bounds)))
-    (unless bounds
+    (unless (and bounds
+                 (not (markdown-table-wrap-inside-code-fence-p (car bounds))))
       (user-error "No pipe table at point"))
     (let* ((text (buffer-substring-no-properties (car bounds) (cdr bounds)))
            (wrapped (markdown-table-wrap (markdown-table-wrap-unwrap text)
                                          (if (integerp width) width (window-width))
-                                         nil markdown-hide-markup)))
+                                         nil
+                                         (bound-and-true-p markdown-hide-markup))))
       (unless (equal wrapped text)
         (save-excursion
           (delete-region (car bounds) (cdr bounds))
@@ -596,6 +619,15 @@ columns of such a table may shift on a second pass."
   (when (derived-mode-p 'eca-chat-mode)
     (flyspell-mode -1)))
 (add-hook 'eca-chat-mode-hook #'my/eca-chat-disable-flyspell)
+
+;; ECA pads the tables of its chat buffers (padding the next render hides) and
+;; decorates them with its own action bar: keep that bar off, so the wrapped
+;; view of `markdown-table-wrap-pretty' owns the chat tables.
+(defun my/eca-chat-table-wrap-setup ()
+  "Give the chat tables of the buffer to `markdown-table-wrap-pretty'."
+  (setq-local eca-chat-table-beautify nil))
+(add-hook 'eca-chat-mode-hook #'my/eca-chat-table-wrap-setup)
+(add-hook 'eca-chat-finished-hook #'my/markdown-table-wrap-pretty-refresh)
 
 ;; Comments are rendered smaller and italic in every buffer
 (set-face-attribute 'font-lock-comment-face nil :height 0.75 :slant 'italic)

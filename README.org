@@ -891,59 +891,81 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
   - `C-c C-x w` wraps the table at point to the window width, or to the width given as a prefix argument.
 
 #+BEGIN_SRC emacs-lisp
-;; Markdown table wrap: pipe tables drawn wrapped, in place, without touching the text
-(use-package markdown-table-wrap
-  :ensure t
-  :commands (markdown-table-wrap markdown-table-wrap-unwrap))
+  ;; Markdown table wrap: pipe tables drawn wrapped, in place, without touching the text
+  (use-package markdown-table-wrap
+    :ensure t
+    :commands (markdown-table-wrap markdown-table-wrap-unwrap))
 
-(use-package markdown-table-wrap-pretty
-  :commands (markdown-table-wrap-pretty-mode
-             markdown-table-wrap-pretty-toggle)
-  :init
-  (setq markdown-table-wrap-pretty-default-on-major-modes
-        '(markdown-mode gfm-mode org-mode))  ;; gfm-mode covers .md files and ECA chats
-  ;; depth -90: render the tables before a failing mode hook of the buffer can skip ours
-  (add-hook 'markdown-mode-hook #'markdown-table-wrap-pretty-mode -90)
-  (add-hook 'org-mode-hook #'markdown-table-wrap-pretty-mode -90))
+  (defun my/markdown-table-wrap-pretty-enable ()
+    "Render the tables of the buffer, containing a failure to load the mode."
+    (with-demoted-errors "markdown-table-wrap-pretty: %S"
+      (markdown-table-wrap-pretty-mode)))
 
-(defun my/markdown-table-bounds ()
-  "Return the bounds of the pipe table containing point, or nil."
-  (save-excursion
-    (beginning-of-line)
-    (when (looking-at-p "[[:blank:]]*|")
-      (while (and (not (bobp))
-                  (save-excursion (forward-line -1) (looking-at-p "[[:blank:]]*|")))
-        (forward-line -1))
-      (let ((beg (point)))
-        (while (and (not (eobp)) (looking-at-p "[[:blank:]]*|"))
-          (forward-line 1))
-        (cons beg (point))))))
+  (defun my/markdown-table-wrap-pretty-refresh ()
+    "Render the tables of the buffer again, after a save or a revert.
+  Editing a table drops its overlays on purpose, and nothing brings them back."
+    (when (bound-and-true-p markdown-table-wrap-pretty-mode)
+      (with-demoted-errors "markdown-table-wrap-pretty: %S"
+        (markdown-table-wrap-pretty-buffer))))
 
-(defun my/wrap-table-at-point (width)
-  "Rewrite the pipe table at point to WIDTH, or to the window width.
-The table is unwrapped first, so a table wrapped earlier can be resized;
-`markdown-table-wrap-unwrap' joins mid-word breaks with a space, so the
-columns of such a table may shift on a second pass."
-  (interactive "P")
-  (let ((bounds (my/markdown-table-bounds)))
-    (unless bounds
-      (user-error "No pipe table at point"))
-    (let* ((text (buffer-substring-no-properties (car bounds) (cdr bounds)))
-           (wrapped (markdown-table-wrap (markdown-table-wrap-unwrap text)
-                                         (if (integerp width) width (window-width))
-                                         nil markdown-hide-markup)))
-      (unless (equal wrapped text)
-        (save-excursion
-          (delete-region (car bounds) (cdr bounds))
-          (goto-char (car bounds))
-          (insert wrapped "\n"))))))
+  ;; ships in the `markdown-table-wrap' package above: no :ensure of its own
+  (use-package markdown-table-wrap-pretty
+    :commands (markdown-table-wrap-pretty-mode
+               markdown-table-wrap-pretty-toggle
+               markdown-table-wrap-pretty-buffer)
+    :init
+    (setq markdown-table-wrap-pretty-default-on-major-modes
+          '(markdown-mode gfm-mode org-mode))  ;; gfm-mode covers .md files and ECA chats
+    ;; depth -90: render the tables before a failing mode hook of the buffer can skip ours
+    (add-hook 'markdown-mode-hook #'my/markdown-table-wrap-pretty-enable -90)
+    (add-hook 'org-mode-hook #'my/markdown-table-wrap-pretty-enable -90)
+    (add-hook 'after-save-hook #'my/markdown-table-wrap-pretty-refresh)
+    (add-hook 'after-revert-hook #'my/markdown-table-wrap-pretty-refresh))
 
-(with-eval-after-load 'markdown-mode
-  (define-key markdown-mode-map (kbd "C-c C-x C-k") #'markdown-table-wrap-pretty-toggle)
-  (define-key markdown-mode-map (kbd "C-c C-x w") #'my/wrap-table-at-point))
+  (defun my/markdown-table-bounds ()
+    "Return the bounds of the pipe table containing point, or nil."
+    (save-excursion
+      (beginning-of-line)
+      (when (looking-at-p "[[:blank:]]*|")
+        (while (and (not (bobp))
+                    (save-excursion (forward-line -1) (looking-at-p "[[:blank:]]*|")))
+          (forward-line -1))
+        (let ((beg (point)))
+          (while (and (not (eobp)) (looking-at-p "[[:blank:]]*|"))
+            (forward-line 1))
+          (cons beg (point))))))
 
-(with-eval-after-load 'org
-  (define-key org-mode-map (kbd "C-c C-x C-k") #'markdown-table-wrap-pretty-toggle))
+  (defun my/wrap-table-at-point (width)
+    "Rewrite the pipe table at point to WIDTH, or to the window width.
+  Only a Markdown table outside a code block is rewritten.  The table is
+  unwrapped first, so a table wrapped earlier can be resized;
+  `markdown-table-wrap-unwrap' joins mid-word breaks with a space, so the
+  columns of such a table may shift on a second pass."
+    (interactive "P")
+    (require 'markdown-table-wrap)
+    (unless (derived-mode-p 'markdown-mode)
+      (user-error "Only Markdown pipe tables are wrapped here"))
+    (let ((bounds (my/markdown-table-bounds)))
+      (unless (and bounds
+                   (not (markdown-table-wrap-inside-code-fence-p (car bounds))))
+        (user-error "No pipe table at point"))
+      (let* ((text (buffer-substring-no-properties (car bounds) (cdr bounds)))
+             (wrapped (markdown-table-wrap (markdown-table-wrap-unwrap text)
+                                           (if (integerp width) width (window-width))
+                                           nil
+                                           (bound-and-true-p markdown-hide-markup))))
+        (unless (equal wrapped text)
+          (save-excursion
+            (delete-region (car bounds) (cdr bounds))
+            (goto-char (car bounds))
+            (insert wrapped "\n"))))))
+
+  (with-eval-after-load 'markdown-mode
+    (define-key markdown-mode-map (kbd "C-c C-x C-k") #'markdown-table-wrap-pretty-toggle)
+    (define-key markdown-mode-map (kbd "C-c C-x w") #'my/wrap-table-at-point))
+
+  (with-eval-after-load 'org
+    (define-key org-mode-map (kbd "C-c C-x C-k") #'markdown-table-wrap-pretty-toggle))
 #+END_SRC
 
 *** English spell check
