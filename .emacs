@@ -1313,7 +1313,7 @@ otherwise open Magit status with `magit-status'."
     "~/git/storm/"
     "~/git/tofu"
     "~/git/docker"
-    "~/git/linux-ha"
+    "~/git/linux_ha"
     "~/.config/eca/"
     "~/.emacs.d/")
   "List of additional workspace directories to attach to ECA sessions."
