@@ -519,11 +519,59 @@ transparency feature needs, and ESC as Meta removes ESC ESC ESC."
   :bind (:map markdown-mode-map
               ("C-c C-e" . markdown-do))) ;; Keybinding for markdown-do
 
-;; Valign: draw GFM Markdown tables as aligned grids (hides raw | and - markup)
-(use-package valign
+;; Markdown table wrap: pipe tables drawn wrapped, in place, without touching the text
+(use-package markdown-table-wrap
   :ensure t
-  :hook ((gfm-mode . valign-mode)
-         (markdown-mode . valign-mode)))
+  :commands (markdown-table-wrap markdown-table-wrap-unwrap))
+
+(use-package markdown-table-wrap-pretty
+  :commands (markdown-table-wrap-pretty-mode
+             markdown-table-wrap-pretty-toggle)
+  :init
+  (setq markdown-table-wrap-pretty-default-on-major-modes
+        '(markdown-mode gfm-mode org-mode))  ;; gfm-mode covers .md files and ECA chats
+  ;; depth -90: render the tables before a failing mode hook of the buffer can skip ours
+  (add-hook 'markdown-mode-hook #'markdown-table-wrap-pretty-mode -90)
+  (add-hook 'org-mode-hook #'markdown-table-wrap-pretty-mode -90))
+
+(defun my/markdown-table-bounds ()
+  "Return the bounds of the pipe table containing point, or nil."
+  (save-excursion
+    (beginning-of-line)
+    (when (looking-at-p "[[:blank:]]*|")
+      (while (and (not (bobp))
+                  (save-excursion (forward-line -1) (looking-at-p "[[:blank:]]*|")))
+        (forward-line -1))
+      (let ((beg (point)))
+        (while (and (not (eobp)) (looking-at-p "[[:blank:]]*|"))
+          (forward-line 1))
+        (cons beg (point))))))
+
+(defun my/wrap-table-at-point (width)
+  "Rewrite the pipe table at point to WIDTH, or to the window width.
+The table is unwrapped first, so a table wrapped earlier can be resized;
+`markdown-table-wrap-unwrap' joins mid-word breaks with a space, so the
+columns of such a table may shift on a second pass."
+  (interactive "P")
+  (let ((bounds (my/markdown-table-bounds)))
+    (unless bounds
+      (user-error "No pipe table at point"))
+    (let* ((text (buffer-substring-no-properties (car bounds) (cdr bounds)))
+           (wrapped (markdown-table-wrap (markdown-table-wrap-unwrap text)
+                                         (if (integerp width) width (window-width))
+                                         nil markdown-hide-markup)))
+      (unless (equal wrapped text)
+        (save-excursion
+          (delete-region (car bounds) (cdr bounds))
+          (goto-char (car bounds))
+          (insert wrapped "\n"))))))
+
+(with-eval-after-load 'markdown-mode
+  (define-key markdown-mode-map (kbd "C-c C-x C-k") #'markdown-table-wrap-pretty-toggle)
+  (define-key markdown-mode-map (kbd "C-c C-x w") #'my/wrap-table-at-point))
+
+(with-eval-after-load 'org
+  (define-key org-mode-map (kbd "C-c C-x C-k") #'markdown-table-wrap-pretty-toggle))
 
 ;; English spell checking with aspell (flyspell)
 (setq ispell-program-name "aspell"   ; spell backend
@@ -786,10 +834,14 @@ transparency feature needs, and ESC as Meta removes ESC ESC ESC."
   (setq yas-snippet-dirs '("~/.emacs.d/snippets"))) ;; Specify the directory for snippets
 
 ;; Vertical interactive completion using vertico
+;; TAB completes up to the common prefix, like core completion does, instead of
+;; inserting the selected candidate (vertico binds it to `vertico-insert')
 (use-package vertico
   :ensure t
   :init
-  (vertico-mode)) ;; Enable vertico mode for a vertical completion UI
+  (vertico-mode) ;; Enable vertico mode for a vertical completion UI
+  :bind (:map vertico-map
+              ("TAB" . minibuffer-complete)))
 
 ;; Pop-up completion using corfu
 (use-package corfu
@@ -892,10 +944,12 @@ transparency feature needs, and ESC as Meta removes ESC ESC ESC."
   (unless (and path (string-match-p (regexp-quote bin) path))
     (setenv "PATH" (if path (concat bin ":" path) bin))))
 
-;; ECA chat buffers derive from gfm-mode, they must not start a language server
-(defun my/lsp-deferred-unless-chat ()
-  "Start `lsp-deferred' unless the current buffer is an ECA chat buffer."
-  (unless (derived-mode-p 'eca-chat-mode)
+;; ECA chat buffers derive from gfm-mode, they must not start a language server;
+;; emacs-lisp has no lsp client, starting one there only warns
+(defun my/lsp-deferred-when-supported ()
+  "Start `lsp-deferred' unless this buffer is an ECA chat or has no LSP client."
+  (unless (or (derived-mode-p 'eca-chat-mode)
+              (derived-mode-p 'emacs-lisp-mode))
     (lsp-deferred)))
 
 ;; Shell script diagnostics stay with shellcheck, through flycheck
@@ -955,14 +1009,14 @@ transparency feature needs, and ESC as Meta removes ESC ESC ESC."
   (lsp-enable-suggest-server-download t)
   (lsp-enable-dap-auto-configure nil)
   :hook
-  ((prog-mode . my/lsp-deferred-unless-chat)
+  ((prog-mode . my/lsp-deferred-when-supported)
    ;; sh-base-mode covers sh-mode and bash-ts-mode, and runs before prog-mode-hook,
    ;; so shellcheck disables LSP diagnostics before the server starts
    (sh-base-mode . my/lsp-shellcheck-owns-diagnostics)
    ;; text-mode children: not covered by prog-mode-hook
-   (markdown-mode . my/lsp-deferred-unless-chat)
-   (gfm-mode . my/lsp-deferred-unless-chat)
-   (yaml-ts-mode . my/lsp-deferred-unless-chat)))
+   (markdown-mode . my/lsp-deferred-when-supported)
+   (gfm-mode . my/lsp-deferred-when-supported)
+   (yaml-ts-mode . my/lsp-deferred-when-supported)))
 
 (use-package lsp-ui
   :ensure t

@@ -38,7 +38,7 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
     - [[#tree-sitter-modes][Tree-sitter modes]]
     - [[#csv-mode][Csv mode]]
     - [[#markdown-mode][Markdown mode]]
-    - [[#valign][Valign]]
+    - [[#markdown-table-wrap][Markdown table wrap]]
     - [[#english-spell-check][English spell check]]
     - [[#comments-face][Comments face]]
     - [[#org-mode][Org mode]]
@@ -876,22 +876,74 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
                 ("C-c C-e" . markdown-do))) ;; Keybinding for markdown-do
 #+END_SRC
 
-*** Valign
+*** Markdown table wrap
 :PROPERTIES:
-:CUSTOM_ID: valign
+:CUSTOM_ID: markdown-table-wrap
 :END:
-- *Purpose*: Renders GFM Markdown tables as aligned grids, hiding raw `|` and `-` markup.
+- *Purpose*: Draws the pipe tables of Markdown, gfm and Org buffers as wrapped tables, without rewriting the text.
 - *Functionality*:
-  - Draws table cells with aligned columns and box-drawing separators using overlays.
-  - Activates automatically in `gfm-mode` and `markdown-mode` buffers.
-- *Usage*: Automatic; tables appear as drawn grids while editing `.md` files.
+  - `markdown-table-wrap-pretty` renders the tables of a buffer as a box-drawing view with display overlays, and re-renders them losslessly on window resize, so the canonical table stays in the buffer.
+  - The mode hooks are added at depth -90, so a buffer renders its tables before any other hook of that buffer can fail.
+  - `my/wrap-table-at-point` rewrites the table at point in the source itself, unwrapping it first, when a table has to be reflowed.
+- *Usage*:
+  - Automatic in `markdown-mode`, `gfm-mode` (`.md` files and ECA chat buffers) and `org-mode`; it replaces `valign`, whose display-only alignment it supersedes.
+  - `C-c C-x C-k` toggles the table at point between the wrapped view and the raw source.
+  - `C-c C-x w` wraps the table at point to the window width, or to the width given as a prefix argument.
 
 #+BEGIN_SRC emacs-lisp
-  ;; Valign: draw GFM Markdown tables as aligned grids (hides raw | and - markup)
-  (use-package valign
-    :ensure t
-    :hook ((gfm-mode . valign-mode)
-           (markdown-mode . valign-mode)))
+;; Markdown table wrap: pipe tables drawn wrapped, in place, without touching the text
+(use-package markdown-table-wrap
+  :ensure t
+  :commands (markdown-table-wrap markdown-table-wrap-unwrap))
+
+(use-package markdown-table-wrap-pretty
+  :commands (markdown-table-wrap-pretty-mode
+             markdown-table-wrap-pretty-toggle)
+  :init
+  (setq markdown-table-wrap-pretty-default-on-major-modes
+        '(markdown-mode gfm-mode org-mode))  ;; gfm-mode covers .md files and ECA chats
+  ;; depth -90: render the tables before a failing mode hook of the buffer can skip ours
+  (add-hook 'markdown-mode-hook #'markdown-table-wrap-pretty-mode -90)
+  (add-hook 'org-mode-hook #'markdown-table-wrap-pretty-mode -90))
+
+(defun my/markdown-table-bounds ()
+  "Return the bounds of the pipe table containing point, or nil."
+  (save-excursion
+    (beginning-of-line)
+    (when (looking-at-p "[[:blank:]]*|")
+      (while (and (not (bobp))
+                  (save-excursion (forward-line -1) (looking-at-p "[[:blank:]]*|")))
+        (forward-line -1))
+      (let ((beg (point)))
+        (while (and (not (eobp)) (looking-at-p "[[:blank:]]*|"))
+          (forward-line 1))
+        (cons beg (point))))))
+
+(defun my/wrap-table-at-point (width)
+  "Rewrite the pipe table at point to WIDTH, or to the window width.
+The table is unwrapped first, so a table wrapped earlier can be resized;
+`markdown-table-wrap-unwrap' joins mid-word breaks with a space, so the
+columns of such a table may shift on a second pass."
+  (interactive "P")
+  (let ((bounds (my/markdown-table-bounds)))
+    (unless bounds
+      (user-error "No pipe table at point"))
+    (let* ((text (buffer-substring-no-properties (car bounds) (cdr bounds)))
+           (wrapped (markdown-table-wrap (markdown-table-wrap-unwrap text)
+                                         (if (integerp width) width (window-width))
+                                         nil markdown-hide-markup)))
+      (unless (equal wrapped text)
+        (save-excursion
+          (delete-region (car bounds) (cdr bounds))
+          (goto-char (car bounds))
+          (insert wrapped "\n"))))))
+
+(with-eval-after-load 'markdown-mode
+  (define-key markdown-mode-map (kbd "C-c C-x C-k") #'markdown-table-wrap-pretty-toggle)
+  (define-key markdown-mode-map (kbd "C-c C-x w") #'my/wrap-table-at-point))
+
+(with-eval-after-load 'org
+  (define-key org-mode-map (kbd "C-c C-x C-k") #'markdown-table-wrap-pretty-toggle))
 #+END_SRC
 
 *** English spell check
@@ -1282,14 +1334,21 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 - *Functionality*:
   - Arranges vertical listing in the minibuffer for better visibility.
   - Supports standard Emacs completion functions seamlessly.
-- *Usage*: Active automatically when selecting commands or opening files.
+  - Completes up to the common prefix on `TAB`, as core completion does, instead of inserting the selected candidate.
+- *Usage*:
+  - Active automatically when selecting commands or opening files.
+  - `TAB` completes as far as the candidates agree, `RET` accepts the selected candidate.
 
 #+BEGIN_SRC emacs-lisp
-  ;; Vertical interactive completion using vertico
-  (use-package vertico
-    :ensure t
-    :init
-    (vertico-mode)) ;; Enable vertico mode for a vertical completion UI
+;; Vertical interactive completion using vertico
+;; TAB completes up to the common prefix, like core completion does, instead of
+;; inserting the selected candidate (vertico binds it to `vertico-insert')
+(use-package vertico
+  :ensure t
+  :init
+  (vertico-mode) ;; Enable vertico mode for a vertical completion UI
+  :bind (:map vertico-map
+              ("TAB" . minibuffer-complete)))
 #+END_SRC
 
 *** Corfu
@@ -1463,7 +1522,7 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 - *Purpose*: Finds the language server binaries and decides which buffers may start one.
 - *Functionality*:
   - Adds `~/.local/bin` to `exec-path` and `PATH`, which a graphical or daemon Emacs does not inherit from the shell profile.
-  - Defers the server start until the buffer is visible, skips the ECA chat buffers (they derive from `gfm-mode`), hands shell scripts back to shellcheck and loads the external pyright client before starting Python.
+  - Defers the server start until the buffer is visible, skips the ECA chat buffers (they derive from `gfm-mode`) and `emacs-lisp-mode` (lsp-mode ships no client for it, so starting one only warns), hands shell scripts back to shellcheck and loads the external pyright client before starting Python.
   - Roots every file under `/root/git` into a single project, which the shell language server requires to index the repositories together.
 - *Usage*: Nothing to call, the helpers are installed on the major mode hooks.
 
@@ -1476,10 +1535,12 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
   (unless (and path (string-match-p (regexp-quote bin) path))
     (setenv "PATH" (if path (concat bin ":" path) bin))))
 
-;; ECA chat buffers derive from gfm-mode, they must not start a language server
-(defun my/lsp-deferred-unless-chat ()
-  "Start `lsp-deferred' unless the current buffer is an ECA chat buffer."
-  (unless (derived-mode-p 'eca-chat-mode)
+;; ECA chat buffers derive from gfm-mode, they must not start a language server;
+;; emacs-lisp has no lsp client, starting one there only warns
+(defun my/lsp-deferred-when-supported ()
+  "Start `lsp-deferred' unless this buffer is an ECA chat or has no LSP client."
+  (unless (or (derived-mode-p 'eca-chat-mode)
+              (derived-mode-p 'emacs-lisp-mode))
     (lsp-deferred)))
 
 ;; Shell script diagnostics stay with shellcheck, through flycheck
@@ -1523,7 +1584,7 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 :END:
 - *Purpose*: Sets the lsp-mode behaviour shared by every language.
 - *Functionality*:
-  - Binds the lsp-mode keymap under `C-c l`, the default `s-l` being unusable in a terminal, and starts a server from `prog-mode-hook`, with `sh-base-mode` claiming shell diagnostics for shellcheck and explicit entries for the text-mode children (Markdown, gfm, YAML).
+  - Binds the lsp-mode keymap under `C-c l`, the default `s-l` being unusable in a terminal, and starts a server from `prog-mode-hook` except where no client exists (emacs-lisp, which only warns) or the buffer must not have one (the ECA chats), with `sh-base-mode` claiming shell diagnostics for shellcheck and explicit entries for the text-mode children (Markdown, gfm, YAML).
   - Keeps the JSON-RPC trace off, never formats on save, hides the breadcrumb and avoids duplicated modeline diagnostics.
   - Takes the guessed project root without prompting, so a project file starts its server directly, while a file outside any project starts none.
 - *Usage*: `C-c l g g` jumps to a definition, `C-c l g r` lists references, `C-c l a a` runs a code action, `C-c l g p` lists the project diagnostics.
@@ -1552,14 +1613,14 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
   (lsp-enable-suggest-server-download t)
   (lsp-enable-dap-auto-configure nil)
   :hook
-  ((prog-mode . my/lsp-deferred-unless-chat)
+  ((prog-mode . my/lsp-deferred-when-supported)
    ;; sh-base-mode covers sh-mode and bash-ts-mode, and runs before prog-mode-hook,
    ;; so shellcheck disables LSP diagnostics before the server starts
    (sh-base-mode . my/lsp-shellcheck-owns-diagnostics)
    ;; text-mode children: not covered by prog-mode-hook
-   (markdown-mode . my/lsp-deferred-unless-chat)
-   (gfm-mode . my/lsp-deferred-unless-chat)
-   (yaml-ts-mode . my/lsp-deferred-unless-chat)))
+   (markdown-mode . my/lsp-deferred-when-supported)
+   (gfm-mode . my/lsp-deferred-when-supported)
+   (yaml-ts-mode . my/lsp-deferred-when-supported)))
 #+END_SRC
 
 *** User interface and extras
