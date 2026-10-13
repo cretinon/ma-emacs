@@ -2057,7 +2057,7 @@ otherwise open Magit status with `magit-status'."
 - *Purpose*: Integrates ECA (Editor Code Assistant) AI client into Emacs with secure API key storage. See [[https://github.com/editor-code-assistant/eca-emacs][ECA Emacs Github]] or [[https://eca.dev][ECA Homepage]] for more details.
 - *Functionality*:
   - Installs the `eca` package from source with the native `:vc` plist form, the `:fetcher github` variant of the work machine being kept as a comment.
-  - Fetches the Google and DeepSeek API keys from encrypted `auth-source` before every ECA server start, through advice on `eca-process-start`.
+  - Fetches the Google, DeepSeek and GitHub API keys from encrypted `auth-source` before every ECA server start, through advice on `eca-process-start`.
   - Defines an interactive `my/eca` wrapper that decrypts the keys and launches ECA.
   - After the session opens, attaches extra workspace directories (`my/eca-extra-workspaces`, e.g. `~/git/mcp`, `~/git/agents`, `~/git/ma-emacs`) to the ECA session.
 - *Usage*: Run `M-x my/eca` or press `F7` to toggle the Editor Code Assistant chat view with automatic authentication and extra workspace attachment.
@@ -2082,7 +2082,14 @@ otherwise open Magit status with `magit-status'."
         (let ((secret (plist-get match :secret)))
           (setenv "DEEPSEEK_API_KEY" (if (functionp secret)
                                             (funcall secret)
-                                          secret)))))))
+                                          secret))))))
+  (unless (getenv "AI_GITHUB_TOKEN")
+    (let ((match (car (auth-source-search :host "api.github.com" :user "apikey"))))
+      (when match
+        (let ((secret (plist-get match :secret)))
+          (setenv "AI_GITHUB_TOKEN" (if (functionp secret)
+                                        (funcall secret)
+                                      secret)))))))
 
 ;; The keys must be in the environment before the ECA server process starts
 (defun my/eca-process-setup-keys (&rest _)

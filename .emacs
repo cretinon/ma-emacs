@@ -3,7 +3,7 @@
 ;; Author: Jacques Cretinon
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "30.1"))
-;; Version: 1.3
+;; Version: 1.4
 
 ;;; Commentary:
 ;;
@@ -12,6 +12,7 @@
 
 ;;; Changelog:
 ;;
+;; v1.4 loads the GitHub token from auth-source next to the Google and DeepSeek keys
 ;; v1.3 keeps the tables wrapped after a save and contains a broken pretty mode
 ;; v1.2 applies the review findings and keeps README.org in sync
 ;; v1.1 closes the file-local eval hole, hardens the init and drops dead code
@@ -1380,7 +1381,14 @@ otherwise open Magit status with `magit-status'."
         (let ((secret (plist-get match :secret)))
           (setenv "DEEPSEEK_API_KEY" (if (functionp secret)
                                             (funcall secret)
-                                          secret)))))))
+                                          secret))))))
+  (unless (getenv "AI_GITHUB_TOKEN")
+    (let ((match (car (auth-source-search :host "api.github.com" :user "apikey"))))
+      (when match
+        (let ((secret (plist-get match :secret)))
+          (setenv "AI_GITHUB_TOKEN" (if (functionp secret)
+                                        (funcall secret)
+                                      secret)))))))
 
 ;; The keys must be in the environment before the ECA server process starts
 (defun my/eca-process-setup-keys (&rest _)
