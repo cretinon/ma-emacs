@@ -3,7 +3,7 @@
 ;; Author: Jacques Cretinon
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "30.1"))
-;; Version: 1.4
+;; Version: 1.5
 
 ;;; Commentary:
 ;;
@@ -12,6 +12,7 @@
 
 ;;; Changelog:
 ;;
+;; v1.5 folds the JSON blocks, arrows in the left fringe, and stops asking to restart a dead LSP server
 ;; v1.4 loads the GitHub token from auth-source next to the Google and DeepSeek keys
 ;; v1.3 keeps the tables wrapped after a save and contains a broken pretty mode
 ;; v1.2 applies the review findings and keeps README.org in sync
@@ -500,6 +501,43 @@ transparency feature needs, and ESC as Meta removes ESC ESC ESC."
   (condition-case err
       (require 'typescript-ts-mode)
     (error (display-warning 'init (format "typescript-ts-mode: %s" err) :warning))))
+
+;; JSON code folding
+;; `treesit-fold' folds the tree-sitter nodes of a JSON buffer; its indicators
+;; mark every foldable node in the fringe, on the left because that is where
+;; the eye follows the code.  A folded block shows the marker below instead of
+;; a node summary, and the marker is global because every truncation mark reads
+;; it.  It stays ONE column wide: a folded region is measured by the width of
+;; its marker, so a wider one makes `indent-guide' compute a negative column
+;; and trip its `args-out-of-range' branch.
+(setq truncate-string-ellipsis "↴")
+
+(defun my/json-fold-setup ()
+  "Show the fold marker instead of a tree-sitter node summary."
+  (setq-local treesit-fold-summary-show nil))
+
+(use-package treesit-fold
+  :ensure t
+  :hook ((json-ts-mode . my/json-fold-setup)           ;; marker, not a summary
+         (json-ts-mode . treesit-fold-indicators-mode))  ;; also enables folding
+  :config
+  (setq treesit-fold-indicators-fringe 'left-fringe)
+  (keymap-set treesit-fold-mode-map "M-<down>" #'treesit-fold-close)
+  (keymap-set treesit-fold-mode-map "M-<up>" #'treesit-fold-open))
+
+;; `indent-guide' draws its guide from `move-to-column', which counts a folded
+;; region by the width of its marker: the column can then fall inside a
+;; character, the branch `indent-guide' reserves for tabs, and its string write
+;; goes one past the end (`args-out-of-range').  The error would kill its
+;; `post-command-hook', so the guides would stop being drawn on every later
+;; command: skip that one line instead, keep every other guide.
+(defun my/indent-guide-safe-overlay (fn &rest args)
+  "Draw one indentation guide, skipping a line the column computation trips on."
+  (condition-case nil
+      (apply fn args)
+    (args-out-of-range nil)))
+
+(advice-add 'indent-guide--make-overlay :around #'my/indent-guide-safe-overlay)
 
 ;; CSV mode configuration
 (use-package csv-mode
@@ -1028,6 +1066,7 @@ columns of such a table may shift on a second pass."
   (lsp-auto-guess-root t)
   (lsp-idle-delay 0.5)
   (lsp-log-io nil)
+  (lsp-restart 'ignore)  ;; a dead server must not block `kill-emacs' with a question
   (lsp-enable-file-watchers nil)
   (lsp-file-watch-threshold 4000)
   (lsp-enable-snippet t)
