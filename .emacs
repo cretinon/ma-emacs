@@ -3,7 +3,7 @@
 ;; Author: Jacques Cretinon
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "30.1"))
-;; Version: 1.5
+;; Version: 1.6
 
 ;;; Commentary:
 ;;
@@ -12,6 +12,7 @@
 
 ;;; Changelog:
 ;;
+;; v1.6 pins the JSON and Python grammars to revisions their tree-sitter mode queries accept, and fontifies before mapping a mode
 ;; v1.5 folds the JSON blocks, arrows in the left fringe, and stops asking to restart a dead LSP server
 ;; v1.4 loads the GitHub token from auth-source next to the Google and DeepSeek keys
 ;; v1.3 keeps the tables wrapped after a save and contains a broken pretty mode
@@ -459,17 +460,23 @@ transparency feature needs, and ESC as Meta removes ESC ESC ESC."
 
 ;; Download and install tree sitter grammar
 ;; `treesit-ready-p' is not available until treesit.el is loaded (not dumped here)
+;; A pinned revision must define every node its `*-ts-mode' font-lock query asks for
+;; and stay ABI 13-14 (what libtree-sitter 0.22 accepts): `treesit-ready-p' checks
+;; that ABI, but never the node set, so a pin missing one queried node colours
+;; nothing and fails silently.  Install the grammar under ~/.emacs.d/tree-sitter and
+;; delete the stale libtree-sitter-<lang>.so before a bump: the loop below skips any
+;; grammar `treesit-ready-p' accepts, so a loadable stale .so is never replaced.
 (require 'treesit)
 (setq treesit-language-source-alist
       '((bash       "https://github.com/tree-sitter/tree-sitter-bash" "v0.20.0")
-        (json       "https://github.com/tree-sitter/tree-sitter-json" "v0.19.0")
+        (json       "https://github.com/tree-sitter/tree-sitter-json" "v0.24.8")
         (yaml       "https://github.com/tree-sitter-grammars/tree-sitter-yaml" "v0.7.2")
         (go         "https://github.com/tree-sitter/tree-sitter-go" "v0.19.0")
         (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "v0.23.2" "typescript/src")
         (tsx        "https://github.com/tree-sitter/tree-sitter-typescript" "v0.23.2" "tsx/src")
         (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile" "v0.1.0")
         (c          "https://github.com/tree-sitter/tree-sitter-c" "v0.20.0")
-        (python     "https://github.com/tree-sitter/tree-sitter-python" "v0.20.0")
+        (python     "https://github.com/tree-sitter/tree-sitter-python" "v0.23.6")
         (awk        "https://github.com/Beaglefoot/tree-sitter-awk" "v0.7.2")))
 
 (dolist (lang-info treesit-language-source-alist)
@@ -482,25 +489,72 @@ transparency feature needs, and ESC as Meta removes ESC ESC ESC."
                                 (format "tree-sitter %s: %s" lang err)
                                 :warning))))))
 
+;; A grammar is used only once it has really fontified a buffer: availability and
+;; ABI say nothing about the nodes the mode's query asks for.  The probe binds the
+;; mode lists, because loading a mode library registers its own extensions
+;; (`python-ts-mode' takes `.py' from `python-mode'); it muffles the messages and
+;; warnings of that load, and refuses the warnings Emacs would defer to after-init,
+;; so no *Warnings* buffer is drawn for a grammar nobody asked for.  That refusal
+;; takes every warning raised while the probe runs: `go-ts-mode' loses its missing
+;; `gomod' warning, the only notice that `go.mod' is left uncoloured.  `go-ts-mode'
+;; maps `/go\.mod\'' only while `treesit-ready-p' accepts a `gomod' grammar that is
+;; not installed here.  Each rejected grammar is kept in `my/ts-unusable': the
+;; fallback is silent by design, and that trace is the only way to tell it from a
+;; mode never mapped.  `warnings' is loaded first, since binding a variable it
+;; defines before it loads would end up lexical.
+(require 'warnings)
+
+(defvar my/ts-unusable nil
+  "Rejected tree-sitter grammars, as (LANG MODE REASON) entries.")
+
+;; A reload must not carry the rejections of the previous evaluation
+(setq my/ts-unusable nil)
+
+(defun my/ts-usable-p (lang mode)
+  "Return non-nil when LANG's grammar lets MODE fontify without error.
+An unusable grammar is pushed onto `my/ts-unusable'."
+  (let ((inhibit-message t)
+        (delayed-warnings-list nil)
+        (warning-suppress-types '((treesit)))
+        (warning-suppress-log-types '((treesit)))
+        (warning-minimum-level :error)
+        (message-log-max nil)
+        (auto-mode-alist auto-mode-alist)
+        (interpreter-mode-alist interpreter-mode-alist))
+    (if (not (treesit-ready-p lang t))
+        (progn
+          (push (list lang mode 'not-ready) my/ts-unusable)
+          nil)
+      (condition-case err
+          (with-temp-buffer
+            (insert "x")
+            (delay-mode-hooks (funcall mode))
+            (font-lock-ensure)
+            t)
+        (error
+         (push (list lang mode err) my/ts-unusable)
+         nil)))))
+
 ;; json, yaml and go have no third-party mode here: their extensions map
 ;; straight to the tree-sitter mode, and only when its grammar is usable
 (dolist (entry '(("\\.json\\'" json-ts-mode json)
-                 ("\\.yaml\\'" yaml-ts-mode yaml)
+                 ("\\.ya?ml\\'" yaml-ts-mode yaml)
                  ("\\.go\\'"   go-ts-mode   go)))
-  (when (treesit-ready-p (nth 2 entry) t)
+  (when (my/ts-usable-p (nth 2 entry) (nth 1 entry))
     (add-to-list 'auto-mode-alist (cons (nth 0 entry) (nth 1 entry)))))
 
 ;; sh and python modes are built in: remap them when their grammar is usable
 (dolist (remap '((sh-mode     bash-ts-mode   bash)
                  (python-mode python-ts-mode python)))
-  (when (treesit-ready-p (nth 2 remap) t)
+  (when (my/ts-usable-p (nth 2 remap) (nth 1 remap))
     (add-to-list 'major-mode-remap-alist (cons (nth 0 remap) (nth 1 remap)))))
 
-;; TypeScript has no classic mode: the ts modes map .ts/.tsx once loaded
-(when (treesit-language-available-p 'typescript)
-  (condition-case err
-      (require 'typescript-ts-mode)
-    (error (display-warning 'init (format "typescript-ts-mode: %s" err) :warning))))
+;; TypeScript has no classic mode, and its library maps .ts/.tsx only while it loads,
+;; which the probe discards: map each extension here, one grammar at a time
+(dolist (entry '(("\\.ts\\'"  typescript-ts-mode typescript)
+                 ("\\.tsx\\'" tsx-ts-mode        tsx)))
+  (when (my/ts-usable-p (nth 2 entry) (nth 1 entry))
+    (add-to-list 'auto-mode-alist (cons (nth 0 entry) (nth 1 entry)))))
 
 ;; JSON code folding
 ;; `treesit-fold' folds the tree-sitter nodes of a JSON buffer; its indicators
@@ -1138,7 +1192,8 @@ columns of such a table may shift on a second pass."
 
 (use-package awk-ts-mode
   :ensure t
-  :if (treesit-language-available-p 'awk)
+  :if (and (locate-library "awk-ts-mode")
+           (my/ts-usable-p 'awk 'awk-ts-mode))
   :mode "\\.[mg]?awk\\'")
 
 ;; Clients bundled with lsp-mode: no :ensure, they load with lsp-mode
