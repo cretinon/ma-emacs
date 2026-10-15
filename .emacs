@@ -1427,6 +1427,13 @@ otherwise open Magit status with `magit-status'."
         (let ((secret (plist-get match :secret)))
           (setenv "AI_GITHUB_TOKEN" (if (functionp secret)
                                         (funcall secret)
+                                      secret))))))
+  (unless (getenv "ANTHROPIC_API_KEY")
+    (let ((match (car (auth-source-search :host "api.anthropic.com" :user "apikey"))))
+      (when match
+        (let ((secret (plist-get match :secret)))
+          (setenv "ANTHROPIC_API_KEY" (if (functionp secret)
+                                        (funcall secret)
                                       secret)))))))
 
 ;; The keys must be in the environment before the ECA server process starts
