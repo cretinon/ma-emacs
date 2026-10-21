@@ -814,10 +814,10 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 - *Purpose*: Chooses the tree-sitter major mode for the languages that have no third-party mode here.
 - *Functionality*:
   - Maps `.json`, `.yaml` and `.go` straight to `json-ts-mode`, `yaml-ts-mode` and `go-ts-mode`, only when `my/ts-usable-p` has fontified a buffer with that grammar.
-  - Remaps the built-in `sh-mode` and `python-mode` to `bash-ts-mode` and `python-ts-mode` under the same condition.
+  - Remaps the built-in `python-mode` to `python-ts-mode` under the same condition, and leaves `sh-mode` classic: `bash-ts-mode` fontifies fewer node types, so a buffer rewritten on disk keeps stale colours and its remaining tokens share one green face.
   - Proves each grammar by fontifying a scratch buffer: availability and ABI never reveal a node the mode's query expects.
   - Maps `.ts` and `.tsx` to `typescript-ts-mode` and `tsx-ts-mode` under the same condition, since that library only registers them while it loads.
-- *Usage*: Automatic on `.json`, `.yaml`, `.go`, `.sh`, `.py`, `.ts` and `.tsx` buffers once the matching grammar is installed and proves itself; without it the classic mode is kept unchanged.
+- *Usage*: Automatic on `.json`, `.yaml`, `.go`, `.py`, `.ts` and `.tsx` buffers once the matching grammar is installed and proves itself; without it the classic mode is kept unchanged, and `.sh` buffers stay on `sh-mode` in every case.
 
 #+BEGIN_SRC emacs-lisp
   ;; A grammar is used only once it has really fontified a buffer: availability and
@@ -874,9 +874,11 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
     (when (my/ts-usable-p (nth 2 entry) (nth 1 entry))
       (add-to-list 'auto-mode-alist (cons (nth 0 entry) (nth 1 entry)))))
 
-  ;; sh and python modes are built in: remap them when their grammar is usable
-  (dolist (remap '((sh-mode     bash-ts-mode   bash)
-                   (python-mode python-ts-mode python)))
+  ;; python mode is built in: remap it when its grammar is usable.  `sh-mode' stays
+  ;; classic, and is not remapped: `bash-ts-mode' fontifies fewer node types, so a
+  ;; buffer rewritten on disk keeps stale colours, and its remaining tokens share the
+  ;; green of `font-lock-string-face' where `sh-mode' gives each its own face
+  (dolist (remap '((python-mode python-ts-mode python)))
     (when (my/ts-usable-p (nth 2 remap) (nth 1 remap))
       (add-to-list 'major-mode-remap-alist (cons (nth 0 remap) (nth 1 remap)))))
 

@@ -3,7 +3,7 @@
 ;; Author: Jacques Cretinon
 ;; Keywords: convenience
 ;; Package-Requires: ((emacs "30.1"))
-;; Version: 1.6
+;; Version: 1.7
 
 ;;; Commentary:
 ;;
@@ -12,6 +12,7 @@
 
 ;;; Changelog:
 ;;
+;; v1.7 keeps bash buffers on the classic `sh-mode`, whose per-token colouring `bash-ts-mode` does not match
 ;; v1.6 pins the JSON and Python grammars to revisions their tree-sitter mode queries accept, and fontifies before mapping a mode
 ;; v1.5 folds the JSON blocks, arrows in the left fringe, and stops asking to restart a dead LSP server
 ;; v1.4 loads the GitHub token from auth-source next to the Google and DeepSeek keys
@@ -543,9 +544,11 @@ An unusable grammar is pushed onto `my/ts-unusable'."
   (when (my/ts-usable-p (nth 2 entry) (nth 1 entry))
     (add-to-list 'auto-mode-alist (cons (nth 0 entry) (nth 1 entry)))))
 
-;; sh and python modes are built in: remap them when their grammar is usable
-(dolist (remap '((sh-mode     bash-ts-mode   bash)
-                 (python-mode python-ts-mode python)))
+;; python mode is built in: remap it when its grammar is usable.  `sh-mode' stays
+;; classic, and is not remapped: `bash-ts-mode' fontifies fewer node types, so a
+;; buffer rewritten on disk keeps stale colours, and its remaining tokens share the
+;; green of `font-lock-string-face' where `sh-mode' gives each its own face
+(dolist (remap '((python-mode python-ts-mode python)))
   (when (my/ts-usable-p (nth 2 remap) (nth 1 remap))
     (add-to-list 'major-mode-remap-alist (cons (nth 0 remap) (nth 1 remap)))))
 
