@@ -288,6 +288,26 @@
 (with-eval-after-load 'magit
   (add-hook 'magit-post-refresh-hook #'my/treemacs-refresh-all))
 
+;; The tags node of a file comes from imenu, whose per-buffer cache nothing
+;; invalidates: the node keeps listing the functions of a previous save
+(defun my/treemacs-rescan-imenu ()
+  "Invalidate the imenu index of the saved buffer, then redraw its project."
+  (require 'imenu)
+  (setq-local imenu--index-alist nil)
+  (when (fboundp 'treemacs-run-in-every-buffer)
+    (ignore-errors
+      (let ((treemacs-silent-refresh t)
+            (file (buffer-file-name)))
+        (treemacs-run-in-every-buffer
+         (when-let* ((project (treemacs--find-project-for-path file)))
+           (treemacs--do-refresh (current-buffer) project)))))))
+
+(defun my/treemacs-rescan-imenu-h ()
+  "Refresh the treemacs tags of this buffer after each save."
+  (add-hook 'after-save-hook #'my/treemacs-rescan-imenu nil t))
+
+(add-hook 'prog-mode-hook #'my/treemacs-rescan-imenu-h)
+
 ;; Highlight indentation levels for better code readability
 (use-package indent-guide
   :ensure t

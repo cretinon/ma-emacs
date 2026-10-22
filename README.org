@@ -408,8 +408,10 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
   - Sorts the tree case-insensitively, and renders the project roots in that same order whatever their insertion order.
   - Adds the Magit glue (`treemacs-magit`) and switches Treemacs to the all-the-icons theme.
   - Refreshes every Treemacs project on each Magit refresh, so the git status faces never stay stale.
+  - Invalidates the imenu index of a saved programming buffer and redraws its project, so the `Function` tag node never keeps the functions of a previous save.
 - *Usage*: Press `F5` to toggle the Treemacs file drawer; `M-x my/install-all-the-icons-fonts` once on a machine that lacks the icon fonts.
   - `M-x my/treemacs-refresh-all` rebuilds every project tree, the way to clear a stale git face after a commit made outside Emacs.
+  - The tag node refreshes by itself on each save; `r` in the tree still forces a manual refresh.
 
 #+BEGIN_SRC emacs-lisp
   ;; Use package management for managing plugins
@@ -490,6 +492,26 @@ It lets you read the commentary and evalate code *step by step* from Emacs. (ope
 
   (with-eval-after-load 'magit
     (add-hook 'magit-post-refresh-hook #'my/treemacs-refresh-all))
+
+  ;; The tags node of a file comes from imenu, whose per-buffer cache nothing
+  ;; invalidates: the node keeps listing the functions of a previous save
+  (defun my/treemacs-rescan-imenu ()
+    "Invalidate the imenu index of the saved buffer, then redraw its project."
+    (require 'imenu)
+    (setq-local imenu--index-alist nil)
+    (when (fboundp 'treemacs-run-in-every-buffer)
+      (ignore-errors
+        (let ((treemacs-silent-refresh t)
+              (file (buffer-file-name)))
+          (treemacs-run-in-every-buffer
+           (when-let* ((project (treemacs--find-project-for-path file)))
+             (treemacs--do-refresh (current-buffer) project)))))))
+
+  (defun my/treemacs-rescan-imenu-h ()
+    "Refresh the treemacs tags of this buffer after each save."
+    (add-hook 'after-save-hook #'my/treemacs-rescan-imenu nil t))
+
+  (add-hook 'prog-mode-hook #'my/treemacs-rescan-imenu-h)
 #+END_SRC
 
 *** Indentation and block of code
