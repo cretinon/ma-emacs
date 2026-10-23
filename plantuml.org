@@ -373,9 +373,8 @@ foo -[#blue;#green,dashed,thickness=4]-> bar6  : [blue;green,dashed,4]
 * Network Diagram
 ** Network with group and color
 #+begin_src plantuml :results file :file img/network.png :exports results
-  @startuml
+  @startnwdiag
   title Network
-  nwdiag {
           inet [shape = cloud];
           inet -- router;
           network Sample_front {
@@ -404,8 +403,7 @@ foo -[#blue;#green,dashed,thickness=4]-> bar6  : [blue;green,dashed,4]
                           db02;
                   }
           }
-  }
-  @enduml
+  @endnwdiag
 #+end_src
 
 #+RESULTS:
@@ -497,11 +495,10 @@ package "Images" {
 
 ** Icons and Network
 #+begin_src plantuml :results file :file img/network_icons.png :exports results
-@startuml
+@startnwdiag
 !include <office/Servers/application_server>
 !include <office/Servers/database_server>
 
-nwdiag {
   network dmz {
       address = "210.x.x.x/24"
 
@@ -517,8 +514,7 @@ nwdiag {
       db01 [address = "172.x.x.100",  description = "<$database_server>\n db01"];
       db02 [address = "172.x.x.101",  description = "<$database_server>\n db02"];
   }
-}
-@enduml
+@endnwdiag
 #+end_src
 
 #+RESULTS:
