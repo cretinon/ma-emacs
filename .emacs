@@ -1498,6 +1498,13 @@ otherwise open Magit status with `magit-status'."
         (let ((secret (plist-get match :secret)))
           (setenv "DEEPSEEK_API_KEY" (if (functionp secret)
                                             (funcall secret)
+                                       secret))))))
+  (unless (getenv "N8N_API_KEY")
+    (let ((match (car (auth-source-search :host "n8n.intranet.local" :user "apikey"))))
+      (when match
+        (let ((secret (plist-get match :secret)))
+          (setenv "N8N_API_KEY" (if (functionp secret)
+                                            (funcall secret)
                                           secret))))))
   (unless (getenv "AI_GITHUB_TOKEN")
     (let ((match (car (auth-source-search :host "api.github.com" :user "apikey"))))
@@ -1512,7 +1519,14 @@ otherwise open Magit status with `magit-status'."
         (let ((secret (plist-get match :secret)))
           (setenv "ANTHROPIC_API_KEY" (if (functionp secret)
                                         (funcall secret)
-                                      secret)))))))
+                                      secret))))))
+  (unless (getenv "GRAFANA_SERVICE_ACCOUNT_TOKEN")
+    (let ((match (car (auth-source-search :host "grafana.intranet.local" :user "apikey"))))
+      (when match
+        (let ((secret (plist-get match :secret)))
+          (setenv "GRAFANA_SERVICE_ACCOUNT_TOKEN" (if (functionp secret)
+                                                      (funcall secret)
+                                                    secret)))))))
 
 ;; The keys must be in the environment before the ECA server process starts
 (defun my/eca-process-setup-keys (&rest _)

@@ -2240,7 +2240,14 @@ otherwise open Magit status with `magit-status'."
         (let ((secret (plist-get match :secret)))
           (setenv "ANTHROPIC_API_KEY" (if (functionp secret)
                                         (funcall secret)
-                                      secret)))))))
+                                      secret))))))
+  (unless (getenv "GRAFANA_SERVICE_ACCOUNT_TOKEN")
+    (let ((match (car (auth-source-search :host "grafana.intranet.local" :user "apikey"))))
+      (when match
+        (let ((secret (plist-get match :secret)))
+          (setenv "GRAFANA_SERVICE_ACCOUNT_TOKEN" (if (functionp secret)
+                                                      (funcall secret)
+                                                    secret)))))))
 
 ;; The keys must be in the environment before the ECA server process starts
 (defun my/eca-process-setup-keys (&rest _)
