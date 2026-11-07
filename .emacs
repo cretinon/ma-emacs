@@ -1548,6 +1548,7 @@ otherwise open Magit status with `magit-status'."
     "~/git/linux_ha/"
     "~/git/ansible/"
     "~/git/cron/"
+    "~/git/grafana/"
     "~/.config/eca/"
     "~/.emacs.d/")
   "List of additional workspace directories to attach to ECA sessions."
